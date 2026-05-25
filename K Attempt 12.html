@@ -1,0 +1,3401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gujarat Title Flow Report & Annexure Generator | Attempt 12</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #1a3a52; --secondary: #2c5f7c; --accent: #27ae60;
+            --danger: #c0392b; --warning: #f39c12; --bg: #f5f5f0;
+            --card: #ffffff; --text: #2c3e50; --border: #e0e0d8;
+            --shadow: rgba(0,0,0,0.08); --completed: #e8f5e9; --completed-border: #4caf50;
+        }
+        [data-theme="dark"] {
+            --primary: #4a90b8; --secondary: #6bb3d4; --accent: #2ecc71;
+            --bg: #1a1a2e; --card: #16213e; --text: #e0e0e0;
+            --border: #2a2a4a; --shadow: rgba(0,0,0,0.3);
+            --completed: #1a3a1a; --completed-border: #4caf50;
+        }
+        body { font-family: 'Georgia', 'Times New Roman', serif; background: var(--bg); color: var(--text); line-height: 1.6; transition: background 0.3s, color 0.3s; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white; padding: 40px; border-radius: 8px; margin-bottom: 30px;
+            box-shadow: 0 4px 6px var(--shadow); position: relative;
+        }
+        .header h1 { font-size: 2.2em; margin-bottom: 10px; font-weight: 400; }
+        .header p { opacity: 0.9; font-size: 1em; }
+        .version-badge {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(255,255,255,0.2); padding: 4px 12px;
+            border-radius: 20px; font-size: 0.8em; font-weight: 600;
+        }
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .panel {
+            background: var(--card); border-radius: 8px; padding: 30px;
+            box-shadow: 0 2px 4px var(--shadow); border: 1px solid var(--border);
+            margin-bottom: 20px; transition: all 0.3s; position: relative;
+        }
+        .panel.completed { border-left: 5px solid var(--completed-border); background: var(--completed); }
+        .panel h2 {
+            color: var(--primary); margin-bottom: 20px; padding-bottom: 10px;
+            border-bottom: 2px solid var(--border); font-size: 1.3em;
+            display: flex; justify-content: space-between; align-items: center;
+            cursor: pointer; user-select: none;
+        }
+        .panel h2 .section-status { font-size: 0.7em; font-weight: 400; opacity: 0.7; }
+        .panel h3 { color: var(--secondary); margin-bottom: 15px; font-size: 1.1em; }
+        .panel.collapsed .panel-body { display: none; }
+        .panel.completed .panel-body { display: none; }
+        .panel.completed h2 { border-bottom: none; margin-bottom: 0; }
+        .panel-summary { display: none; padding: 15px 0 0 0; font-size: 0.95em; color: var(--text); line-height: 1.8; }
+        .panel.completed .panel-summary { display: block; }
+        .panel-summary-item { display: inline-block; margin-right: 20px; margin-bottom: 5px; }
+        .panel-summary-item strong { color: var(--primary); }
+        .form-group { margin-bottom: 18px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; color: var(--text); font-size: 0.95em; }
+        input[type="text"], input[type="date"], input[type="number"], select, textarea {
+            width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 4px;
+            font-family: inherit; font-size: 0.95em; transition: border-color 0.3s;
+            background: var(--card); color: var(--text);
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none; border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(44, 95, 124, 0.1);
+        }
+        input[readonly] { background: #f5f5f5; cursor: not-allowed; }
+        [data-theme="dark"] input[readonly] { background: #2a2a4a; }
+        input.disabled-field { background: #e0e0e0 !important; cursor: not-allowed !important; opacity: 0.6; }
+        [data-theme="dark"] input.disabled-field { background: #3a3a3a !important; }
+        input.prom-required-field { border-color: var(--danger) !important; background: #fff5f5 !important; }
+        [data-theme="dark"] input.prom-required-field { background: #3a1a1a !important; }
+        input.prom-required-field:focus { box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.2) !important; }
+        input.prom-field-valid { border-color: var(--accent) !important; background: #f5fff5 !important; }
+        [data-theme="dark"] input.prom-field-valid { background: #1a3a1a !important; }
+        .prom-validation-msg { color: var(--danger); font-size: 0.8em; margin-top: 4px; display: none; }
+        .prom-validation-msg.show { display: block; }
+        textarea { resize: vertical; min-height: 80px; }
+        .checkbox-group { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .checkbox-group input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        .checkbox-group label { margin: 0; font-weight: 400; cursor: pointer; }
+        .btn {
+            background: var(--secondary); color: white; border: none;
+            padding: 12px 24px; border-radius: 4px; cursor: pointer;
+            font-size: 1em; font-family: inherit; transition: all 0.3s;
+            margin-right: 10px; margin-top: 10px;
+        }
+        .btn:hover { background: var(--primary); transform: translateY(-1px); box-shadow: 0 4px 8px var(--shadow); }
+        .btn-secondary { background: #7f8c8d; }
+        .btn-secondary:hover { background: #5f6c6d; }
+        .btn-success { background: var(--accent); }
+        .btn-success:hover { background: #1e8b4c; }
+        .btn-danger { background: var(--danger); }
+        .btn-danger:hover { background: #a93226; }
+        .btn-warning { background: var(--warning); color: #2c3e50; }
+        .btn-warning:hover { background: #e67e22; }
+        .btn-small { padding: 6px 12px; font-size: 0.85em; margin-top: 0; }
+        .save-collapse-btn {
+            background: var(--accent); color: white; border: none;
+            padding: 8px 16px; border-radius: 4px; cursor: pointer;
+            font-size: 0.85em; font-family: inherit; transition: all 0.3s;
+            display: inline-flex; align-items: center; gap: 6px; margin-top: 15px;
+        }
+        .save-collapse-btn:hover { background: #1e8b4c; transform: translateY(-1px); }
+        .save-collapse-btn::before { content: "💾"; }
+        .panel.completed .save-collapse-btn::before { content: "✓"; }
+        .panel.completed .save-collapse-btn { background: var(--completed-border); }
+        .event-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 8px; margin-bottom: 20px; position: relative;
+            overflow: hidden; transition: all 0.3s;
+        }
+        .event-card.completed { border-left: 5px solid var(--completed-border); background: var(--completed); }
+        .event-card.collapsed .event-body { display: none; }
+        .event-card.completed .event-body { display: none; }
+        .event-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 20px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white; cursor: pointer; user-select: none;
+        }
+        .event-header:hover { opacity: 0.95; }
+        .event-number { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.95em; flex-wrap: wrap; }
+        .event-type-icon { font-size: 1.2em; }
+        .event-actions { display: flex; gap: 6px; align-items: center; }
+        .event-actions .btn { margin: 0; padding: 4px 10px; font-size: 0.8em; }
+        .event-body { padding: 20px; transition: all 0.3s; }
+        .event-summary { display: none; padding: 10px 20px 15px 20px; font-size: 0.9em; color: var(--text); background: var(--completed); border-top: 1px solid var(--completed-border); }
+        .event-card.completed .event-summary { display: block; }
+        .event-summary-content { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .event-summary-annex { background: var(--primary); color: white; padding: 3px 10px; border-radius: 4px; font-weight: 600; font-size: 0.85em; }
+        .event-summary-type { color: var(--secondary); font-weight: 600; }
+        .event-summary-desc { color: var(--text); opacity: 0.8; }
+        .move-btns { display: flex; gap: 4px; }
+        .annexure-section { background: #fff8e1; border: 1px solid #ffe082; border-radius: 6px; padding: 15px; margin-top: 15px; }
+        [data-theme="dark"] .annexure-section { background: #2a2a1a; border-color: #5a5a2a; }
+        .annexure-section h4 { color: #856404; margin-bottom: 10px; font-size: 1em; }
+        [data-theme="dark"] .annexure-section h4 { color: #d4a017; }
+        .annexure-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end; margin-bottom: 10px; padding: 10px; background: var(--card); border-radius: 4px; border: 1px solid #ffe082; position: relative; }
+        .annexure-row.duplicate-error { border-color: var(--danger); background: #ffebee; }
+        [data-theme="dark"] .annexure-row.duplicate-error { background: #3a1a1a; }
+        .annexure-row .error-msg { position: absolute; bottom: -20px; left: 10px; font-size: 0.75em; color: var(--danger); font-weight: 600; }
+
+        /* OPTION B: Original Required Row */
+        .original-required-row {
+            grid-column: 1 / -1;
+            background: #ffebee;
+            border: 1px solid #ef9a9a;
+            border-radius: 4px;
+            padding: 10px 12px;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        [data-theme="dark"] .original-required-row {
+            background: #3a1a1a;
+            border-color: #5a1a1a;
+        }
+        .original-required-row .checkbox-group {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .original-required-row .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .original-required-row .checkbox-group label {
+            margin: 0;
+            font-weight: 600;
+            color: #c62828;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+        [data-theme="dark"] .original-required-row .checkbox-group label {
+            color: #ef5350;
+        }
+
+        .document-preview { background: white; border-radius: 8px; padding: 40px; box-shadow: 0 2px 4px var(--shadow); border: 1px solid var(--border); margin-top: 30px; font-size: 0.95em; }
+        .document-header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid var(--primary); }
+        .document-header h2 { font-size: 1.8em; color: var(--primary); margin-bottom: 5px; }
+        .document-section { margin-bottom: 25px; page-break-inside: avoid; }
+        .document-section h3 { color: var(--secondary); margin-bottom: 12px; font-size: 1.15em; text-transform: uppercase; letter-spacing: 0.5px; }
+        .document-section p { margin-bottom: 8px; text-align: justify; }
+        .highlight-box { background: var(--bg); border-left: 4px solid var(--secondary); padding: 15px; margin: 15px 0; }
+        .remarks-box { background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 20px; margin: 20px 0; }
+        .remarks-box h4 { color: #856404; margin-bottom: 15px; font-size: 1.1em; text-align: center; }
+        .remarks-box p { margin-bottom: 10px; line-height: 1.8; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { border: 1px solid var(--border); padding: 10px; text-align: left; }
+        th { background: var(--bg); font-weight: 600; color: var(--primary); }
+        .annexure-list-table td:first-child { text-align: center; font-weight: 600; width: 60px; }
+        .annexure-list-table td:nth-child(2) { font-weight: 600; width: 120px; }
+        .annexure-list-table td:nth-child(3) { width: 150px; }
+        .signature-block { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        .signature-line { border-top: 1px solid var(--text); margin-top: 60px; padding-top: 5px; font-size: 0.9em; }
+        .original-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 600; margin-left: 5px; }
+        .badge-original { background: #d4edda; color: #155724; }
+        .badge-photocopy { background: #f8d7da; color: #721c24; }
+        .badge-truecopy { background: #fff3cd; color: #856404; }
+        .badge-certified { background: #d1ecf1; color: #0c5460; }
+        .required-note { background: #ffebee; color: #c62828; padding: 2px 6px; border-radius: 3px; font-size: 0.75em; font-weight: 600; margin-left: 5px; }
+        .suggested-annexure { background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 4px; padding: 8px 12px; margin-bottom: 8px; font-size: 0.9em; color: #2e7d32; }
+        [data-theme="dark"] .suggested-annexure { background: #1a3a1a; border-color: #2e7d32; color: #4caf50; }
+        .suggested-annexure strong { color: #1b5e20; }
+        .report-type-section { background: #e3f2fd; border: 2px solid #2196f3; border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        [data-theme="dark"] .report-type-section { background: #1a2a3a; border-color: #4a90b8; }
+        .report-type-section h3 { color: #1565c0; margin-bottom: 15px; }
+        [data-theme="dark"] .report-type-section h3 { color: #6bb3d4; }
+        .conditional-fields { display: none; margin-top: 15px; padding: 15px; background: var(--bg); border-radius: 6px; border: 1px solid var(--border); }
+        .conditional-fields.active { display: block; }
+        .validation-panel { background: #ffebee; border: 2px solid var(--danger); border-radius: 8px; padding: 20px; margin-bottom: 20px; display: none; }
+        .validation-panel.active { display: block; }
+        .validation-panel h3 { color: var(--danger); margin-bottom: 10px; }
+        .validation-panel ul { margin-left: 20px; color: var(--danger); }
+        .validation-panel li { margin-bottom: 5px; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .toolbar-left, .toolbar-right { display: flex; gap: 8px; flex-wrap: wrap; }
+        .theme-toggle { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 0.9em; display: flex; align-items: center; gap: 6px; }
+        .toast { position: fixed; bottom: 20px; right: 20px; background: var(--primary); color: white; padding: 12px 20px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: none; z-index: 1000; animation: slideIn 0.3s ease; }
+        .toast.show { display: block; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .sro-info-box { background: #e3f2fd; border: 1px solid #2196f3; border-radius: 6px; padding: 12px; margin-top: 10px; font-size: 0.9em; display: none; }
+        .sro-info-box.active { display: block; }
+        .sro-info-box p { margin-bottom: 4px; color: #1565c0; }
+        [data-theme="dark"] .sro-info-box { background: #1a2a3a; border-color: #4a90b8; }
+        [data-theme="dark"] .sro-info-box p { color: #6bb3d4; }
+        .address-textarea { min-height: 60px; resize: vertical; }
+        .property-type-conditional { display: none; margin-top: 15px; padding: 15px; background: var(--bg); border-radius: 6px; border: 1px solid var(--border); }
+        .property-type-conditional.active { display: block; }
+        .event-specific-fields { background: #f0f7ff; border: 2px solid #4a90b8; border-radius: 6px; padding: 20px; margin-top: 15px; }
+        [data-theme="dark"] .event-specific-fields { background: #1a2a3a; border-color: #4a90b8; }
+        .event-specific-fields h4 { color: var(--primary); margin-bottom: 15px; font-size: 1.1em; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+        .event-specific-fields .form-group { margin-bottom: 12px; }
+        .event-specific-fields label { font-size: 0.9em; }
+        .auto-field { background: #e8f5e9 !important; border-color: #a5d6a7 !important; }
+        [data-theme="dark"] .auto-field { background: #1a3a1a !important; border-color: #2e7d32 !important; }
+        .auto-field-label { color: #2e7d32; font-size: 0.85em; }
+        [data-theme="dark"] .auto-field-label { color: #4caf50; }
+        .generated-narrative-box { background: #fff8e1; border: 2px solid #ffc107; border-radius: 6px; padding: 15px; margin-top: 15px; }
+        [data-theme="dark"] .generated-narrative-box { background: #2a2a1a; border-color: #d4a017; }
+        .generated-narrative-box h4 { color: #856404; margin-bottom: 10px; font-size: 1em; }
+        [data-theme="dark"] .generated-narrative-box h4 { color: #d4a017; }
+        .generated-narrative-box .narrative-text { color: var(--text); line-height: 1.8; font-size: 0.95em; white-space: pre-wrap; }
+        .heir-preview-box { background: #e3f2fd; border: 1px solid #2196f3; border-radius: 6px; padding: 12px; margin-top: 10px; font-size: 0.9em; }
+        [data-theme="dark"] .heir-preview-box { background: #1a2a3a; border-color: #4a90b8; }
+        .heir-preview-box h5 { color: #1565c0; margin-bottom: 8px; font-size: 0.9em; }
+        [data-theme="dark"] .heir-preview-box h5 { color: #6bb3d4; }
+        .heir-preview-text { color: var(--text); line-height: 1.6; }
+        .heir-inputs-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .autosave-indicator { position: fixed; top: 20px; right: 20px; background: var(--accent); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85em; display: none; z-index: 1001; animation: fadeInOut 2s ease; }
+        .autosave-indicator.show { display: block; }
+        @keyframes fadeInOut { 0% { opacity: 0; transform: translateY(-10px); } 20% { opacity: 1; transform: translateY(0); } 80% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-10px); } }
+        .recovery-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000; }
+        .recovery-modal.active { display: flex; }
+        .recovery-modal-content { background: var(--card); padding: 30px; border-radius: 8px; max-width: 500px; width: 90%; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .recovery-modal-content h3 { color: var(--primary); margin-bottom: 15px; }
+        .recovery-modal-content p { margin-bottom: 20px; color: var(--text); }
+        .sub-annexures-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .completion-check { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: var(--accent); color: white; border-radius: 50%; font-size: 0.8em; margin-left: 10px; }
+        .edit-btn { background: var(--warning); color: #2c3e50; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-family: inherit; transition: all 0.3s; display: inline-flex; align-items: center; gap: 4px; margin-left: 10px; }
+        .edit-btn:hover { background: #e67e22; transform: translateY(-1px); }
+        .edit-btn::before { content: "✎"; }
+        .panel.completed .edit-btn, .event-card.completed .edit-btn { display: inline-flex; }
+        .panel .edit-btn, .event-card .edit-btn { display: none; }
+        .undo-redo-bar { display: flex; gap: 8px; margin-bottom: 15px; }
+        .undo-redo-bar .btn { padding: 6px 14px; font-size: 0.85em; margin: 0; }
+        .custom-floor-field { display: none; margin-top: 8px; }
+        .custom-floor-field.active { display: block; }
+
+        /* Confirmation Dialog Styles */
+        .confirm-dialog-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: none; justify-content: center;
+            align-items: center; z-index: 3000;
+        }
+        .confirm-dialog-overlay.active { display: flex; }
+        .confirm-dialog-box {
+            background: var(--card); padding: 30px; border-radius: 8px;
+            max-width: 450px; width: 90%; text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3); border: 2px solid var(--warning);
+        }
+        .confirm-dialog-box h3 { color: var(--warning); margin-bottom: 15px; font-size: 1.2em; }
+        .confirm-dialog-box p { margin-bottom: 20px; color: var(--text); font-size: 0.95em; line-height: 1.6; }
+        .confirm-dialog-buttons { display: flex; gap: 15px; justify-content: center; }
+        .confirm-dialog-buttons .btn { margin: 0; }
+
+        .fields-hidden { display: none; }
+
+        @media print { body { background: white; } .no-print { display: none !important; } .document-preview { box-shadow: none; border: none; padding: 0; } .document-section { page-break-inside: avoid; } .event-card { page-break-inside: avoid; } }
+        @media (max-width: 900px) {
+            .main-grid { grid-template-columns: 1fr; gap: 20px; }
+            .annexure-row { grid-template-columns: 1fr; min-width: 300px; }
+            .signature-block { grid-template-columns: 1fr; }
+            .toolbar { flex-direction: column; align-items: stretch; }
+            .header h1 { font-size: 1.5em; }
+            .event-header { flex-direction: column; gap: 10px; align-items: flex-start; }
+            .event-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+            .event-actions .btn { min-height: 36px; min-width: 44px; }
+            .move-btns { order: -1; }
+            .event-summary-content { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .heir-inputs-container { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .panel { padding: 20px 15px; }
+            .header { padding: 25px 20px; }
+            .header h1 { font-size: 1.3em; }
+            .version-badge { position: static; display: inline-block; margin-bottom: 10px; }
+            .btn { width: 100%; margin-right: 0; margin-bottom: 8px; min-height: 44px; }
+            .toolbar-left, .toolbar-right { width: 100%; }
+            .toolbar-left .btn, .toolbar-right .btn { flex: 1; min-width: 120px; }
+            .panel-summary-item { display: block; margin-right: 0; }
+        }
+        @media (max-width: 480px) {
+            .event-number { font-size: 0.85em; }
+            .event-actions .btn { padding: 6px 8px; font-size: 0.75em; }
+            .document-preview { padding: 20px 15px; }
+            .save-collapse-btn { width: 100%; justify-content: center; }
+        }
+    </style>
+<base target="_blank">
+<base target="_blank">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <span class="version-badge">Attempt 12</span>
+            <h1>Gujarat Title Flow Report & Annexure Generator</h1>
+            <p>Form-based system with event-specific fields, auto-formatting, auto-save, smart narrative templates, and collapsed summaries</p>
+        </div>
+
+        <div class="autosave-indicator" id="autosaveIndicator">&#128190; Auto-saved</div>
+
+        <div class="recovery-modal" id="recoveryModal">
+            <div class="recovery-modal-content">
+                <h3>&#128190; Previous Session Found</h3>
+                <p>A previously unsaved session was detected. Would you like to restore it?</p>
+                <button class="btn btn-success" onclick="restoreFromAutoSave()">Restore Session</button>
+                <button class="btn btn-secondary" onclick="discardAutoSave()">Start Fresh</button>
+            </div>
+        </div>
+
+        <!-- Confirmation Dialog for Area -->
+        <div class="confirm-dialog-overlay" id="confirmDialogOverlay">
+            <div class="confirm-dialog-box">
+                <h3>&#9888; Area Not Mentioned</h3>
+                <p id="confirmDialogMessage">Area is not mentioned for this New Revision Survey event. Do you want to proceed without area?</p>
+                <div class="confirm-dialog-buttons">
+                    <button class="btn btn-success" onclick="confirmDialogYes()">Yes, Proceed</button>
+                    <button class="btn btn-secondary" onclick="confirmDialogNo()">No, Add Area</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="toolbar no-print">
+            <div class="toolbar-left">
+                <div class="undo-redo-bar">
+                    <button class="btn btn-secondary btn-small" onclick="undoAction()" id="undoBtn" disabled>&#8617; Undo</button>
+                    <button class="btn btn-secondary btn-small" onclick="redoAction()" id="redoBtn" disabled>&#8618; Redo</button>
+                </div>
+                <button class="btn btn-secondary btn-small" onclick="exportJSON()">&#128190; Save Session (JSON)</button>
+                <button class="btn btn-secondary btn-small" onclick="importJSON()">&#128229; Load Session (JSON)</button>
+                <button class="btn btn-secondary btn-small" onclick="clearAutoSave()">&#128465; Clear Auto-Save</button>
+            </div>
+            <div class="toolbar-right">
+                <button class="theme-toggle" onclick="toggleTheme()">&#127763; Dark Mode</button>
+                <button class="btn btn-warning btn-small" onclick="validateBeforeGenerate()">&#10003; Validate</button>
+            </div>
+        </div>
+
+        <div class="panel validation-panel no-print" id="validationPanel">
+            <h3>&#9888; Validation Issues</h3>
+            <ul id="validationList"></ul>
+        </div>
+
+        <div class="panel no-print" id="panel-header">
+            <h2 onclick="togglePanelCollapse('panel-header')">
+                Report Header Information
+                <span class="section-status" id="status-header"></span>
+                <button class="edit-btn" onclick="event.stopPropagation(); expandPanel('panel-header')">Edit</button>
+            </h2>
+            <div class="panel-body">
+                <div class="main-grid">
+                    <div>
+                        <div class="form-group">
+                            <label>TCR Inward Number</label>
+                            <input type="text" id="reportNum" oninput="updatePanelSummary('panel-header'); triggerAutoSave()">
+                        </div>
+                        <div class="form-group">
+                            <label>Date of Report</label>
+                            <input type="date" id="reportDate" onchange="updatePanelSummary('panel-header'); updateSROInfo(); triggerAutoSave()">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>Advocate / Title Examiner</label>
+                            <input type="text" id="examinerName" oninput="updatePanelSummary('panel-header'); triggerAutoSave()">
+                        </div>
+                        <div class="form-group">
+                            <label>Prepared by [Name of the Person preparing the report]</label>
+                            <input type="text" id="preparedBy" oninput="updatePanelSummary('panel-header'); triggerAutoSave()">
+                        </div>
+                    </div>
+                </div>
+                <button class="save-collapse-btn" onclick="saveAndCollapsePanel('panel-header')">Done / Collapse Section</button>
+            </div>
+            <div class="panel-summary" id="summary-panel-header"></div>
+        </div>
+
+        <div class="panel no-print" id="panel-owners">
+            <h2 onclick="togglePanelCollapse('panel-owners')">
+                Owners Information
+                <span class="section-status" id="status-owners"></span>
+                <button class="edit-btn" onclick="event.stopPropagation(); expandPanel('panel-owners')">Edit</button>
+            </h2>
+            <div class="panel-body">
+                <div class="main-grid">
+                    <div>
+                        <div class="form-group">
+                            <label>Client Name (Current Owner)</label>
+                            <input type="text" id="clientName" onchange="updatePanelSummary('panel-owners'); updateAllEventNarratives(); triggerAutoSave()">
+                        </div>
+                        <div class="form-group">
+                            <label>Address</label>
+                            <textarea id="propertyAddress" class="address-textarea" rows="2" placeholder="Line 1&#10;Line 2" oninput="updatePanelSummary('panel-owners'); triggerAutoSave()"></textarea>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>Unit / Account (for which Unit / Account the property is offered)</label>
+                            <input type="text" id="unitAccount" oninput="updatePanelSummary('panel-owners'); triggerAutoSave()">
+                        </div>
+                    </div>
+                </div>
+                <button class="save-collapse-btn" onclick="saveAndCollapsePanel('panel-owners')">Done / Collapse Section</button>
+            </div>
+            <div class="panel-summary" id="summary-panel-owners"></div>
+        </div>
+
+        <div class="panel no-print" id="panel-property">
+            <h2 onclick="togglePanelCollapse('panel-property')">
+                Property Detail Information
+                <span class="section-status" id="status-property"></span>
+                <button class="edit-btn" onclick="event.stopPropagation(); expandPanel('panel-property')">Edit</button>
+            </h2>
+            <div class="panel-body">
+                <div class="main-grid">
+                    <div>
+                        <div class="form-group">
+                            <label>Property Type</label>
+                            <select id="propertyType" onchange="updatePropertyTypeFields(); updatePanelSummary('panel-property'); triggerAutoSave()">
+                                <option value="">-- Select Property Type --</option>
+                                <option value="factory_land_building">Factory Land and Building</option>
+                                <option value="industrial_shed">Industrial Shed</option>
+                                <option value="open_plot">Open Plot</option>
+                                <option value="agriculture_land">Agriculture Land</option>
+                                <option value="residential_house">Residential House</option>
+                                <option value="flat">Flat</option>
+                                <option value="office">Office</option>
+                                <option value="shop">Shop</option>
+                                <option value="godown">Godown</option>
+                            </select>
+                        </div>
+                        <div class="property-type-conditional" id="flatOfficeShopGodownFields">
+                            <div class="form-group">
+                                <label>Floor Number</label>
+                                <select id="floorNumber" onchange="handleFloorChange(); updatePanelSummary('panel-property'); triggerAutoSave()">
+                                    <option value="">-- Select Floor --</option>
+                                    <option value="First">First</option>
+                                    <option value="Second">Second</option>
+                                    <option value="Third">Third</option>
+                                    <option value="Fourth">Fourth</option>
+                                    <option value="Fifth">Fifth</option>
+                                    <option value="Sixth">Sixth</option>
+                                    <option value="Seventh">Seventh</option>
+                                    <option value="Eighth">Eighth</option>
+                                    <option value="Ninth">Ninth</option>
+                                    <option value="Tenth">Tenth</option>
+                                    <option value="Eleventh">Eleventh</option>
+                                    <option value="Twelfth">Twelfth</option>
+                                    <option value="Thirteenth">Thirteenth</option>
+                                    <option value="Fourteenth">Fourteenth</option>
+                                    <option value="Fifteenth">Fifteenth</option>
+                                    <option value="Ground">Ground</option>
+                                    <option value="Basement">Basement</option>
+                                    <option value="Upper Basement">Upper Basement</option>
+                                    <option value="Lower Ground">Lower Ground</option>
+                                    <option value="Penthouse">Penthouse</option>
+                                    <option value="Custom">Custom</option>
+                                </select>
+                            </div>
+                            <div class="custom-floor-field" id="customFloorField">
+                                <div class="form-group">
+                                    <label>Custom Floor Name</label>
+                                    <input type="text" id="customFloorNumber" placeholder="e.g., Mezzanine, Podium" oninput="updatePanelSummary('panel-property'); triggerAutoSave()">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Actual Number (e.g., Flat No. A-101, Office No. 231)</label>
+                                <input type="text" id="actualNumber" oninput="updatePanelSummary('panel-property'); triggerAutoSave()">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Built up Area Sq. Mt.</label>
+                            <input type="text" id="builtUpArea" oninput="updatePanelSummary('panel-property'); triggerAutoSave()">
+                        </div>
+                        <div class="form-group">
+                            <label>Plot Number</label>
+                            <input type="text" id="plotNumber" oninput="updatePanelSummary('panel-property'); triggerAutoSave()">
+                        </div>
+                        <div class="form-group">
+                            <label>Plot Area Sq. Mt.</label>
+                            <input type="text" id="plotArea" oninput="updatePanelSummary('panel-property'); triggerAutoSave()">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>Building / Complex Name / Society Name</label>
+                            <input type="text" id="buildingName" oninput="updatePanelSummary('panel-property'); triggerAutoSave()">
+                        </div>
+                        <div class="form-group">
+                            <label>Survey Number</label>
+                            <input type="text" id="surveyNumber" onchange="updatePanelSummary('panel-property'); updateAllEventNarratives(); triggerAutoSave()">
+                        </div>
+                        <div class="form-group">
+                            <label>Village</label>
+                            <input type="text" id="villageName" onchange="updatePanelSummary('panel-property'); updateAllEventNarratives(); updateSROInfo(); triggerAutoSave()">
+                        </div>
+                        <div class="form-group">
+                            <label>Taluka</label>
+                            <input type="text" id="talukaName" onchange="updatePanelSummary('panel-property'); updateAllEventNarratives(); updateSROInfo(); triggerAutoSave()">
+                        </div>
+                        <div class="form-group">
+                            <label>District</label>
+                            <input type="text" id="districtName" onchange="updatePanelSummary('panel-property'); updateAllEventNarratives(); triggerAutoSave()">
+                        </div>
+                        <div class="form-group">
+                            <label>Sub-Registrar Office</label>
+                            <input type="text" id="sroOffice" oninput="updatePanelSummary('panel-property'); triggerAutoSave()">
+                        </div>
+                    </div>
+                </div>
+                <div class="sro-info-box" id="sroInfoBox">
+                    <p><strong>SRO Search Configuration:</strong></p>
+                    <p id="sroInfoText"></p>
+                </div>
+                <button class="save-collapse-btn" onclick="saveAndCollapsePanel('panel-property')">Done / Collapse Section</button>
+            </div>
+            <div class="panel-summary" id="summary-panel-property"></div>
+        </div>
+
+        <div class="panel no-print report-type-section" id="panel-reporttype">
+            <h2 onclick="togglePanelCollapse('panel-reporttype')">
+                Report Type Selection
+                <span class="section-status" id="status-reporttype"></span>
+                <button class="edit-btn" onclick="event.stopPropagation(); expandPanel('panel-reporttype')">Edit</button>
+            </h2>
+            <div class="panel-body">
+                <p style="margin-bottom: 15px; color: #555; font-size: 0.9em;">Select the type of report before adding events. This will determine the document requirements and remarks.</p>
+                <div class="form-group">
+                    <label>Type of Report</label>
+                    <select id="reportType" onchange="updateReportTypeFields(); updatePanelSummary('panel-reporttype'); triggerAutoSave()">
+                        <option value="">-- Select Report Type --</option>
+                        <option value="takeover">Takeover File</option>
+                        <option value="sodakhat">Sodakhat / Agreement to Sale File</option>
+                        <option value="original">Original</option>
+                    </select>
+                </div>
+                <div class="conditional-fields" id="takeoverFields">
+                    <div class="form-group">
+                        <label>Name of Bank / Financial Institution (which has created charge)</label>
+                        <input type="text" id="bankName" oninput="updatePanelSummary('panel-reporttype'); triggerAutoSave()">
+                    </div>
+                    <p style="font-size: 0.85em; color: #666; margin-top: 10px;">
+                        <strong>Note:</strong> For Takeover File, all documents will default to "Photo Copy". The remarks section will include requirement for Original No Dues Certificate and Property Release Deed from the bank.
+                    </p>
+                </div>
+                <div class="conditional-fields" id="sodakhatFields">
+                    <div class="form-group">
+                        <label>Name of Intending Borrower-Purchaser</label>
+                        <input type="text" id="intendingBorrower" oninput="updatePanelSummary('panel-reporttype'); triggerAutoSave()">
+                    </div>
+                    <div class="form-group">
+                        <label>Name of Intending Seller</label>
+                        <input type="text" id="intendingSeller" oninput="updatePanelSummary('panel-reporttype'); triggerAutoSave()">
+                    </div>
+                    <p style="font-size: 0.85em; color: #666; margin-top: 10px;">
+                        <strong>Note:</strong> For Sodakhat / Agreement to Sale File, the remarks section will state that clear title will pass to the Intending Borrower-Purchaser only upon purchase by registered sale deed from the Intending Seller.
+                    </p>
+                </div>
+                <div class="conditional-fields" id="originalFields">
+                    <p style="font-size: 0.85em; color: #666;">
+                        <strong>Note:</strong> For Original report, all documents can be Original, Photo Copy, True Copy, or Certified Copy as per actual availability. No special remarks will be added.
+                    </p>
+                </div>
+                <button class="save-collapse-btn" onclick="saveAndCollapsePanel('panel-reporttype')">Done / Collapse Section</button>
+            </div>
+            <div class="panel-summary" id="summary-panel-reporttype"></div>
+        </div>
+
+        <div class="panel no-print" id="panel-events">
+            <h2 onclick="togglePanelCollapse('panel-events')">
+                Title Flow Events
+                <span class="section-status" id="status-events"></span>
+            </h2>
+            <div class="panel-body">
+                <p style="margin-bottom: 15px; color: #7f8c8d; font-size: 0.9em;">Add each event in chronological order. Annexure numbers are suggested automatically but can be edited. Click event header to collapse/expand. Use Done / Collapse Section after filling each event.</p>
+                <div id="eventsContainer"></div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn btn-success" onclick="addEvent()">+ Add New Event</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="no-print" style="text-align: center; margin: 30px 0;">
+            <button class="btn" onclick="generateReport()">Generate Title Flow Report & Annexure List</button>
+            <button class="btn btn-secondary" onclick="exportAsWord()">Export as Word</button>
+            <button class="btn btn-secondary" onclick="clearAll()">Clear All</button>
+        </div>
+
+        <div id="reportOutput" class="document-preview" style="display: none;"></div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+<script>
+// ==================== GLOBAL STATE ====================
+var events = [];
+var reportType = '';
+var nextEventId = 0;
+var autoSaveTimer = null;
+var AUTO_SAVE_KEY = 'gujarat_title_report_autosave_attempt12';
+var AUTO_SAVE_DEBOUNCE = 2000;
+
+// Undo/Redo state
+var undoStack = [];
+var redoStack = [];
+var maxUndoSize = 50;
+
+// Confirmation dialog state
+var confirmDialogCallback = null;
+var confirmDialogEventId = null;
+
+var eventTypeIcons = {
+    'record_of_rights': '&#128203;', 'attachment': '&#128274;', 'release': '&#128275;',
+    'partition': '&#9986;', 'heir_declaration': '&#128106;', 'sale': '&#128221;',
+    'correction_deed': '&#9997;', 'na_conversion': '&#127959;', 'layout_approval': '&#127961;',
+    'mutation': '&#128260;', 'construction_permission': '&#127959;', 'completion_certificate': '&#9989;',
+    'no_dues': '&#129534;', 'tax_receipt': '&#128176;', 'sro_search': '&#128269;',
+    'demise': '&#128327;', 'partition_life': '&#128307;', 'new_revision_survey': '&#128204;',
+    'other': '&#128196;'
+};
+
+var eventTypeNames = {
+    'record_of_rights': 'Promulgation / Record of Rights', 'attachment': 'Attachment by Authority',
+    'release': 'Release from Attachment', 'partition': 'Partition',
+    'heir_declaration': 'Heir Declaration', 'sale': 'Registered Sale Deed',
+    'correction_deed': 'Correction Deed', 'na_conversion': 'NA Conversion Order',
+    'layout_approval': 'Layout Approval', 'mutation': 'Mutation / Ferfar Entry',
+    'construction_permission': 'Construction Permission', 'completion_certificate': 'Completion Certificate',
+    'no_dues': 'No Dues Certificate', 'tax_receipt': 'Property Tax Receipt',
+    'sro_search': 'Sub-Registrar Search', 'demise': 'Demise / Death of Owner',
+    'partition_life': 'Partition During Lifetime', 'new_revision_survey': 'New Revision Survey',
+    'other': 'Other / Custom Event'
+};
+
+var propertyTypeMap = {
+    'factory_land_building': 'Factory Land and Building', 'industrial_shed': 'Industrial Shed',
+    'open_plot': 'Open Plot', 'agriculture_land': 'Agriculture Land', 'residential_house': 'Residential House',
+    'flat': 'Flat', 'office': 'Office', 'shop': 'Shop', 'godown': 'Godown'
+};
+
+var propertyTypesNoBuiltUp = ['open_plot', 'agriculture_land'];
+
+// Set default date
+document.getElementById('reportDate').valueAsDate = new Date();
+
+// ==================== CONFIRMATION DIALOG ====================
+function showConfirmDialog(message, callback) {
+    confirmDialogCallback = callback;
+    document.getElementById('confirmDialogMessage').textContent = message;
+    document.getElementById('confirmDialogOverlay').classList.add('active');
+}
+
+function confirmDialogYes() {
+    document.getElementById('confirmDialogOverlay').classList.remove('active');
+    if (confirmDialogCallback) confirmDialogCallback(true);
+    confirmDialogCallback = null;
+}
+
+function confirmDialogNo() {
+    document.getElementById('confirmDialogOverlay').classList.remove('active');
+    if (confirmDialogCallback) confirmDialogCallback(false);
+    confirmDialogCallback = null;
+}
+
+// ==================== UNDO/REDO ====================
+function saveUndoState() {
+    var state = collectAllData();
+    undoStack.push(JSON.stringify(state));
+    if (undoStack.length > maxUndoSize) undoStack.shift();
+    redoStack = [];
+    updateUndoRedoButtons();
+}
+
+function undoAction() {
+    if (undoStack.length <= 1) return;
+    redoStack.push(undoStack.pop());
+    var state = JSON.parse(undoStack[undoStack.length - 1]);
+    restoreAllData(state);
+    showToast('Undo successful');
+    updateUndoRedoButtons();
+}
+
+function redoAction() {
+    if (redoStack.length === 0) return;
+    var state = JSON.parse(redoStack.pop());
+    undoStack.push(JSON.stringify(state));
+    restoreAllData(state);
+    showToast('Redo successful');
+    updateUndoRedoButtons();
+}
+
+function updateUndoRedoButtons() {
+    document.getElementById('undoBtn').disabled = undoStack.length <= 1;
+    document.getElementById('redoBtn').disabled = redoStack.length === 0;
+}
+
+// ==================== PANEL SUMMARY ====================
+function updatePanelSummary(panelId) {
+    var type = panelId.replace('panel-', '');
+    var summaryEl = document.getElementById('summary-' + panelId);
+    if (!summaryEl) return;
+
+    var summaryHTML = '';
+    switch(type) {
+        case 'header':
+            var reportNum = document.getElementById('reportNum').value.trim();
+            var reportDate = document.getElementById('reportDate').value;
+            var examiner = document.getElementById('examinerName').value.trim();
+            var preparedBy = document.getElementById('preparedBy').value.trim();
+            var parts = [];
+            if (reportNum) parts.push('<span class="panel-summary-item"><strong>TCR:</strong> ' + escapeHtml(reportNum) + '</span>');
+            if (reportDate) parts.push('<span class="panel-summary-item"><strong>Date:</strong> ' + formatDateShort(reportDate) + '</span>');
+            if (examiner) parts.push('<span class="panel-summary-item"><strong>Examiner:</strong> ' + escapeHtml(examiner) + '</span>');
+            if (preparedBy) parts.push('<span class="panel-summary-item"><strong>Prepared By:</strong> ' + escapeHtml(preparedBy) + '</span>');
+            summaryHTML = parts.join('');
+            break;
+
+        case 'owners':
+            var client = document.getElementById('clientName').value.trim();
+            var address = document.getElementById('propertyAddress').value.trim();
+            var unit = document.getElementById('unitAccount').value.trim();
+            var parts = [];
+            if (client) parts.push('<span class="panel-summary-item"><strong>Client:</strong> ' + escapeHtml(client) + '</span>');
+            if (unit) parts.push('<span class="panel-summary-item"><strong>Unit:</strong> ' + escapeHtml(unit) + '</span>');
+            if (address) {
+                var shortAddr = address.split('\n')[0];
+                if (shortAddr.length > 50) shortAddr = shortAddr.substring(0, 50) + '...';
+                parts.push('<span class="panel-summary-item"><strong>Address:</strong> ' + escapeHtml(shortAddr) + '</span>');
+            }
+            summaryHTML = parts.join('');
+            break;
+
+        case 'property':
+            var propType = document.getElementById('propertyType').value;
+            var village = document.getElementById('villageName').value.trim();
+            var taluka = document.getElementById('talukaName').value.trim();
+            var district = document.getElementById('districtName').value.trim();
+            var survey = document.getElementById('surveyNumber').value.trim();
+            var plot = document.getElementById('plotNumber').value.trim();
+            var building = document.getElementById('buildingName').value.trim();
+            var floor = document.getElementById('floorNumber').value;
+            var customFloor = document.getElementById('customFloorNumber').value.trim();
+            var parts = [];
+            if (propType) parts.push('<span class="panel-summary-item"><strong>Type:</strong> ' + escapeHtml(propertyTypeMap[propType] || propType) + '</span>');
+            if (village) parts.push('<span class="panel-summary-item"><strong>Village:</strong> ' + escapeHtml(village) + '</span>');
+            if (taluka) parts.push('<span class="panel-summary-item"><strong>Taluka:</strong> ' + escapeHtml(taluka) + '</span>');
+            if (district) parts.push('<span class="panel-summary-item"><strong>District:</strong> ' + escapeHtml(district) + '</span>');
+            if (survey) parts.push('<span class="panel-summary-item"><strong>Survey:</strong> ' + escapeHtml(survey) + '</span>');
+            if (plot) parts.push('<span class="panel-summary-item"><strong>Plot:</strong> ' + escapeHtml(plot) + '</span>');
+            if (building) parts.push('<span class="panel-summary-item"><strong>Building:</strong> ' + escapeHtml(building) + '</span>');
+            if (floor && floor !== 'Custom') parts.push('<span class="panel-summary-item"><strong>Floor:</strong> ' + escapeHtml(floor) + '</span>');
+            if (floor === 'Custom' && customFloor) parts.push('<span class="panel-summary-item"><strong>Floor:</strong> ' + escapeHtml(customFloor) + '</span>');
+            summaryHTML = parts.join('');
+            break;
+
+        case 'reporttype':
+            var rType = document.getElementById('reportType').value;
+            var parts = [];
+            if (rType) {
+                var typeName = rType === 'takeover' ? 'Takeover File' : rType === 'sodakhat' ? 'Sodakhat / Agreement to Sale' : 'Original';
+                parts.push('<span class="panel-summary-item"><strong>Type:</strong> ' + typeName + '</span>');
+            }
+            if (rType === 'takeover') {
+                var bank = document.getElementById('bankName').value.trim();
+                if (bank) parts.push('<span class="panel-summary-item"><strong>Bank:</strong> ' + escapeHtml(bank) + '</span>');
+            } else if (rType === 'sodakhat') {
+                var borrower = document.getElementById('intendingBorrower').value.trim();
+                var seller = document.getElementById('intendingSeller').value.trim();
+                if (borrower) parts.push('<span class="panel-summary-item"><strong>Borrower:</strong> ' + escapeHtml(borrower) + '</span>');
+                if (seller) parts.push('<span class="panel-summary-item"><strong>Seller:</strong> ' + escapeHtml(seller) + '</span>');
+            }
+            summaryHTML = parts.join('');
+            break;
+    }
+    summaryEl.innerHTML = summaryHTML;
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function formatDateShort(dateString) {
+    if (!dateString) return '';
+    var date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function expandPanel(panelId) {
+    var panel = document.getElementById(panelId);
+    if (!panel) return;
+    panel.classList.remove('completed');
+    var body = panel.querySelector('.panel-body');
+    if (body) body.style.display = 'block';
+}
+
+// ==================== AUTO-SAVE ====================
+function triggerAutoSave() {
+    if (autoSaveTimer) clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(function() { performAutoSave(); }, AUTO_SAVE_DEBOUNCE);
+}
+
+function performAutoSave() {
+    try {
+        var data = collectAllData();
+        localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(data));
+        showAutoSaveIndicator();
+        saveUndoState();
+    } catch (e) { console.error('Auto-save failed:', e); }
+}
+
+function showAutoSaveIndicator() {
+    var indicator = document.getElementById('autosaveIndicator');
+    indicator.classList.add('show');
+    setTimeout(function() { indicator.classList.remove('show'); }, 2000);
+}
+
+function checkAutoSave() {
+    try {
+        var saved = localStorage.getItem(AUTO_SAVE_KEY);
+        if (saved) {
+            var data = JSON.parse(saved);
+            if (data && (data.events.length > 0 || data.header.reportNum || data.ownersInformation.client)) {
+                document.getElementById('recoveryModal').classList.add('active');
+            }
+        }
+    } catch (e) { console.error('Auto-save check failed:', e); }
+}
+
+function restoreFromAutoSave() {
+    try {
+        var saved = localStorage.getItem(AUTO_SAVE_KEY);
+        if (saved) {
+            var data = JSON.parse(saved);
+            restoreAllData(data);
+            showToast('Previous session restored');
+        }
+    } catch (e) { alert('Failed to restore session: ' + e.message); }
+    document.getElementById('recoveryModal').classList.remove('active');
+}
+
+function discardAutoSave() {
+    localStorage.removeItem(AUTO_SAVE_KEY);
+    document.getElementById('recoveryModal').classList.remove('active');
+    showToast('Starting fresh');
+}
+
+function clearAutoSave() {
+    if (confirm('Are you sure you want to clear the auto-saved session?')) {
+        localStorage.removeItem(AUTO_SAVE_KEY);
+        showToast('Auto-save cleared');
+    }
+}
+
+window.addEventListener('load', function() { setTimeout(checkAutoSave, 500); });
+setInterval(function() { if (events.length > 0) performAutoSave(); }, 30000);
+
+// ==================== PANEL COLLAPSE / SAVE & COLLAPSE ====================
+function togglePanelCollapse(panelId) {
+    var panel = document.getElementById(panelId);
+    if (!panel) return;
+    if (panel.classList.contains('completed')) {
+        panel.classList.remove('completed');
+        var body = panel.querySelector('.panel-body');
+        if (body) body.style.display = 'block';
+    } else {
+        var body = panel.querySelector('.panel-body');
+        if (body) body.style.display = body.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+function saveAndCollapsePanel(panelId) {
+    var panel = document.getElementById(panelId);
+    if (!panel) return;
+    var isValid = validatePanel(panelId);
+    if (!isValid) { showToast('Please fill required fields before saving'); return; }
+    panel.classList.add('completed');
+    updatePanelSummary(panelId);
+    var statusEl = document.getElementById('status-' + panelId.replace('panel-', ''));
+    if (statusEl) statusEl.innerHTML = '<span class="completion-check">&#10003;</span> Saved';
+    triggerAutoSave();
+    showToast('Section saved and collapsed');
+}
+
+function validatePanel(panelId) {
+    var panel = document.getElementById(panelId);
+    if (!panel) return false;
+    var type = panelId.replace('panel-', '');
+    switch(type) {
+        case 'header':
+            var reportNum = document.getElementById('reportNum').value.trim();
+            var reportDate = document.getElementById('reportDate').value;
+            var examiner = document.getElementById('examinerName').value.trim();
+            return (reportNum && reportDate) || (reportNum && examiner) || (reportDate && examiner);
+        case 'owners':
+            return document.getElementById('clientName').value.trim() !== '';
+        case 'property':
+            var propType = document.getElementById('propertyType').value;
+            var village = document.getElementById('villageName').value.trim();
+            var taluka = document.getElementById('talukaName').value.trim();
+            var district = document.getElementById('districtName').value.trim();
+            var filled = 0;
+            if (propType) filled++; if (village) filled++; if (taluka) filled++; if (district) filled++;
+            return filled >= 3;
+        case 'reporttype':
+            return document.getElementById('reportType').value !== '';
+        default: return true;
+    }
+}
+
+// ==================== PROPERTY TYPE CONDITIONAL FIELDS ====================
+function updatePropertyTypeFields() {
+    var propertyType = document.getElementById('propertyType').value;
+    var conditionalFields = document.getElementById('flatOfficeShopGodownFields');
+    var builtUpArea = document.getElementById('builtUpArea');
+    var showConditional = ['flat', 'office', 'shop', 'godown'].indexOf(propertyType) !== -1;
+    var disableBuiltUp = propertyTypesNoBuiltUp.indexOf(propertyType) !== -1;
+
+    if (showConditional) conditionalFields.classList.add('active');
+    else {
+        conditionalFields.classList.remove('active');
+        document.getElementById('floorNumber').value = '';
+        document.getElementById('customFloorNumber').value = '';
+        document.getElementById('customFloorField').classList.remove('active');
+        document.getElementById('actualNumber').value = '';
+    }
+
+    if (disableBuiltUp) {
+        builtUpArea.classList.add('disabled-field');
+        builtUpArea.setAttribute('readonly', 'readonly');
+        builtUpArea.setAttribute('placeholder', 'Not applicable for ' + propertyTypeMap[propertyType]);
+    } else {
+        builtUpArea.classList.remove('disabled-field');
+        builtUpArea.removeAttribute('readonly');
+        builtUpArea.setAttribute('placeholder', '');
+    }
+}
+
+function handleFloorChange() {
+    var floorSelect = document.getElementById('floorNumber');
+    var customField = document.getElementById('customFloorField');
+    if (floorSelect.value === 'Custom') {
+        customField.classList.add('active');
+    } else {
+        customField.classList.remove('active');
+        document.getElementById('customFloorNumber').value = '';
+    }
+}
+
+// ==================== SRO SEARCH LOGIC ====================
+function getSROConfig() {
+    var taluka = document.getElementById('talukaName').value.trim();
+    var reportDate = document.getElementById('reportDate').value;
+    if (!taluka || !reportDate) return null;
+    var reportYear = new Date(reportDate).getFullYear();
+    var startYear = reportYear - 30;
+    var splitYear = 2011;
+    var sroMorbi = 'Sub-Registrar Office Morbi';
+    var sroTaluka = '';
+    var isSpecialTaluka = false;
+    var talukaLower = taluka.toLowerCase();
+    if (talukaLower === 'tankara') { sroTaluka = 'Sub-Registrar Office Tankara'; isSpecialTaluka = true; }
+    else if (talukaLower === 'maliya' || talukaLower === 'maliya (mi)') { sroTaluka = 'Sub-Registrar Office Maliya (Mi)'; isSpecialTaluka = true; }
+    else sroTaluka = 'Sub-Registrar Office ' + taluka;
+    return { reportYear: reportYear, startYear: startYear, splitYear: splitYear, sroMorbi: sroMorbi, sroTaluka: sroTaluka, isSpecialTaluka: isSpecialTaluka, taluka: taluka };
+}
+
+function updateSROInfo() {
+    var config = getSROConfig();
+    var box = document.getElementById('sroInfoBox');
+    var text = document.getElementById('sroInfoText');
+    if (!config) { box.classList.remove('active'); return; }
+    var info = '';
+    if (config.isSpecialTaluka) {
+        info = 'Search period: ' + config.startYear + ' - ' + config.splitYear + ' at ' + config.sroMorbi + '; ' + config.splitYear + ' - ' + config.reportYear + ' at ' + config.sroTaluka + ' (31 years total)';
+    } else {
+        info = 'Search period: ' + config.startYear + ' - ' + config.reportYear + ' at ' + config.sroTaluka + ' (31 years total). For Tankara/Maliya talukas, search is split at 2011 between Morbi and respective SRO.';
+    }
+    text.textContent = info;
+    box.classList.add('active');
+}
+
+// ==================== AUTO-REFLECT VILLAGE, TALUKA, DISTRICT IN ALL EVENTS ====================
+var narrativeUpdateTimer = null;
+function updateAllEventNarratives() {
+    if (narrativeUpdateTimer) clearTimeout(narrativeUpdateTimer);
+    narrativeUpdateTimer = setTimeout(function() {
+        for (var i = 0; i < events.length; i++) {
+            if (!events[i]) continue;
+            var eid = events[i].id;
+            var eventType = document.getElementById('eventType-' + eid);
+            if (eventType && eventType.value) {
+                updateEventNarrative(eid);
+            }
+        }
+    }, 300);
+}
+
+function updateEventNarrative(eventId) {
+    var eventType = document.getElementById('eventType-' + eventId).value;
+    if (!eventType) return;
+
+    if (eventType === 'record_of_rights') {
+        updatePromulgationPreview(eventId);
+    } else if (eventType === 'demise') {
+        updateDemisePreview(eventId);
+    } else if (eventType === 'partition_life') {
+        updatePartitionLifePreview(eventId);
+    } else if (eventType === 'new_revision_survey') {
+        updateNewRevisionSurveyPreview(eventId);
+    }
+}
+
+// ==================== TOAST ====================
+function showToast(message) {
+    var toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(function() { toast.classList.remove('show'); }, 3000);
+}
+
+// ==================== THEME TOGGLE ====================
+function toggleTheme() {
+    var current = document.documentElement.getAttribute('data-theme');
+    var next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    showToast(next === 'dark' ? 'Dark mode enabled' : 'Light mode enabled');
+}
+
+// ==================== REPORT TYPE ====================
+function updateReportTypeFields() {
+    reportType = document.getElementById('reportType').value;
+    var fields = ['takeoverFields', 'sodakhatFields', 'originalFields'];
+    fields.forEach(function(f) { document.getElementById(f).classList.remove('active'); });
+    if (reportType === 'takeover') document.getElementById('takeoverFields').classList.add('active');
+    else if (reportType === 'sodakhat') document.getElementById('sodakhatFields').classList.add('active');
+    else if (reportType === 'original') document.getElementById('originalFields').classList.add('active');
+}
+
+// ==================== EVENT MANAGEMENT ====================
+function addEvent() {
+    if (!reportType) {
+        alert('Please select a Report Type first before adding events.');
+        document.getElementById('reportType').focus();
+        return;
+    }
+    var eventId = nextEventId++;
+    var displayIndex = 0;
+    for (var i = 0; i < events.length; i++) { if (events[i]) displayIndex++; }
+    displayIndex++;
+    var suggestedAnnexure = getSuggestedAnnexure();
+    var defaultDocType = '';
+    if (reportType === 'takeover') defaultDocType = 'Photo Copy';
+
+    var eventDiv = document.createElement('div');
+    eventDiv.className = 'event-card';
+    eventDiv.id = 'event-' + eventId;
+
+    var html = '<div class="event-header" onclick="toggleEventCollapse(' + eventId + ')">';
+    html += '<span class="event-number">';
+    html += '<span class="event-type-icon" id="eventIcon-' + eventId + '">&#128196;</span>';
+    html += 'Event [' + displayIndex + '] <span id="eventTypeLabel-' + eventId + '" style="opacity:0.8;font-size:0.85em;margin-left:8px;"></span>';
+    html += '<span id="eventStatus-' + eventId + '" style="margin-left:10px;"></span>';
+    html += '</span>';
+    html += '<div class="event-actions" onclick="event.stopPropagation()">';
+    html += '<div class="move-btns">';
+    html += '<button class="btn btn-secondary btn-small" onclick="moveEvent(' + eventId + ', -1)" title="Move Up">&#8593;</button>';
+    html += '<button class="btn btn-secondary btn-small" onclick="moveEvent(' + eventId + ', 1)" title="Move Down">&#8595;</button>';
+    html += '</div>';
+    html += '<button class="btn btn-secondary btn-small" onclick="duplicateEvent(' + eventId + ')" title="Duplicate">&#9104;</button>';
+    html += '<button class="btn btn-danger btn-small" onclick="removeEvent(' + eventId + ')">Remove</button>';
+    html += '</div>';
+    html += '</div>';
+
+    html += '<div class="event-summary" id="eventSummary-' + eventId + '">';
+    html += '<div class="event-summary-content" id="eventSummaryContent-' + eventId + '">';
+    html += '<span class="event-summary-annex" id="eventSummaryAnnex-' + eventId + '">ANNEX-??</span>';
+    html += '<span class="event-summary-type" id="eventSummaryType-' + eventId + '">No Event Type</span>';
+    html += '<span class="event-summary-desc" id="eventSummaryDesc-' + eventId + '">No description</span>';
+    html += '</div>';
+    html += '</div>';
+
+    html += '<div class="event-body" id="eventBody-' + eventId + '">';
+
+    // Event Type Selection
+    html += '<div class="form-group">';
+    html += '<label>Event Type</label>';
+    html += '<select id="eventType-' + eventId + '" onchange="updateEventFields(' + eventId + '); updateEventIcon(' + eventId + '); triggerAutoSave();">';
+    html += '<option value="">-- Select Event Type --</option>';
+    html += '<option value="record_of_rights">Promulgation / Record of Rights</option>';
+    html += '<option value="attachment">Attachment by Authority</option>';
+    html += '<option value="release">Release from Attachment</option>';
+    html += '<option value="partition">Partition</option>';
+    html += '<option value="heir_declaration">Heir Declaration (Lifetime)</option>';
+    html += '<option value="sale">Registered Sale Deed</option>';
+    html += '<option value="correction_deed">Correction Deed</option>';
+    html += '<option value="na_conversion">NA Conversion Order</option>';
+    html += '<option value="layout_approval">Layout / Town Planning Approval</option>';
+    html += '<option value="mutation">Mutation / Ferfar Entry</option>';
+    html += '<option value="construction_permission">Construction Permission</option>';
+    html += '<option value="completion_certificate">Completion Certificate</option>';
+    html += '<option value="no_dues">No Dues Certificate</option>';
+    html += '<option value="tax_receipt">Property Tax Receipt</option>';
+    html += '<option value="sro_search">Sub-Registrar Search</option>';
+    html += '<option value="demise">Demise / Death of Owner</option>';
+    html += '<option value="partition_life">Partition During Lifetime</option>';
+    html += '<option value="new_revision_survey">New Revision Survey</option>';
+    html += '<option value="other">Other / Custom Event</option>';
+    html += '</select>';
+    html += '</div>';
+
+    // EVENT-SPECIFIC FIELDS CONTAINER
+    html += '<div id="eventSpecificFields-' + eventId + '" class="fields-hidden">';
+    html += '</div>';
+
+    // ANNEXURE SECTION - OPTION B LAYOUT
+    html += '<div class="annexure-section">';
+    html += '<h4>Annexure Details</h4>';
+    html += '<div class="suggested-annexure" id="suggestedAnnexure-' + eventId + '">';
+    html += '<strong>Suggested Annexure:</strong> ' + suggestedAnnexure;
+    html += '</div>';
+
+    // Main annexure row
+    html += '<div class="annexure-row" id="annexureRow-' + eventId + '">';
+    html += '<div class="form-group" style="margin-bottom: 0;">';
+    html += '<label>Annexure Number</label>';
+    html += '<input type="text" id="annexureNum-' + eventId + '" value="' + suggestedAnnexure + '" onchange="validateAnnexureNumbers(); onParentAnnexureChange(' + eventId + '); updateEventSummary(' + eventId + '); triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group" style="margin-bottom: 0;">';
+    html += '<label>Document Type</label>';
+    html += '<select id="docType-' + eventId + '" onchange="updateEventSummary(' + eventId + '); triggerAutoSave()">';
+    html += '<option value="">-- Select --</option>';
+    html += '<option value="Original">Original</option>';
+    html += '<option value="Photo Copy">Photo Copy</option>';
+    html += '<option value="True Copy">True Copy</option>';
+    html += '<option value="Attested Copy">Attested Copy</option>';
+    html += '<option value="Certified Copy">Certified Copy</option>';
+    html += '</select>';
+    html += '</div>';
+    html += '<div class="form-group" style="margin-bottom: 0;">';
+    html += '<label style="visibility: hidden;">Action</label>';
+    html += '<div class="checkbox-group" style="margin-bottom: 0;">';
+    html += '<input type="checkbox" id="originalReq-' + eventId + '" onchange="triggerAutoSave()">';
+    html += '<label for="originalReq-' + eventId + '">Original Required</label>';
+    html += '</div>';
+    html += '</div>';
+    html += '<div class="form-group" style="margin-bottom: 0;">';
+    html += '<label>Document Description</label>';
+    html += '<input type="text" id="annexureDesc-' + eventId + '" oninput="updateEventSummary(' + eventId + '); triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group" style="margin-bottom: 0;">';
+    html += '<label style="visibility: hidden;">Action</label>';
+    html += '<button class="btn btn-secondary btn-small" onclick="addSubAnnexure(' + eventId + ')">+ Sub</button>';
+    html += '</div>';
+    html += '</div>';
+
+    html += '<div class="sub-annexures-container" id="subAnnexures-' + eventId + '"></div>';
+    html += '</div>';
+
+    // Save & Collapse button
+    html += '<div style="text-align: center; margin-top: 20px;">';
+    html += '<button class="save-collapse-btn" onclick="saveAndCollapseEvent(' + eventId + ')">Done / Collapse Event</button>';
+    html += '</div>';
+    html += '</div>';
+
+    eventDiv.innerHTML = html;
+    document.getElementById('eventsContainer').appendChild(eventDiv);
+    events.push({ id: eventId, subCount: 0 });
+
+    if (reportType === 'takeover' && defaultDocType) {
+        document.getElementById('docType-' + eventId).value = defaultDocType;
+    }
+
+    updateAllEventNumbers();
+    validateAnnexureNumbers();
+    showToast('Event ' + displayIndex + ' added');
+    triggerAutoSave();
+}
+
+function buildEventSpecificFields(eventId, eventType) {
+    var container = document.getElementById('eventSpecificFields-' + eventId);
+    if (!container) return;
+
+    container.innerHTML = '';
+    container.classList.remove('fields-hidden');
+
+    var html = '<div class="event-specific-fields">';
+    html += '<h4>&#128221; ' + (eventTypeNames[eventType] || eventType) + ' Details</h4>';
+
+    switch(eventType) {
+        case 'record_of_rights':
+            html += buildPromulgationFields(eventId);
+            break;
+        case 'demise':
+            html += buildDemiseFields(eventId);
+            break;
+        case 'partition_life':
+            html += buildPartitionLifeFields(eventId);
+            break;
+        case 'new_revision_survey':
+            html += buildNewRevisionSurveyFields(eventId);
+            break;
+        case 'sale':
+            html += buildSaleFields(eventId);
+            break;
+        case 'attachment':
+            html += buildAttachmentFields(eventId);
+            break;
+        case 'release':
+            html += buildReleaseFields(eventId);
+            break;
+        case 'partition':
+            html += buildPartitionFields(eventId);
+            break;
+        case 'heir_declaration':
+            html += buildHeirDeclarationFields(eventId);
+            break;
+        case 'correction_deed':
+            html += buildCorrectionDeedFields(eventId);
+            break;
+        case 'na_conversion':
+            html += buildNAConversionFields(eventId);
+            break;
+        case 'layout_approval':
+            html += buildLayoutApprovalFields(eventId);
+            break;
+        case 'mutation':
+            html += buildMutationFields(eventId);
+            break;
+        case 'construction_permission':
+            html += buildConstructionPermissionFields(eventId);
+            break;
+        case 'completion_certificate':
+            html += buildCompletionCertificateFields(eventId);
+            break;
+        case 'no_dues':
+            html += buildNoDuesFields(eventId);
+            break;
+        case 'tax_receipt':
+            html += buildTaxReceiptFields(eventId);
+            break;
+        case 'sro_search':
+            html += buildSROSearchFields(eventId);
+            break;
+        case 'other':
+            html += buildOtherFields(eventId);
+            break;
+        default:
+            html += buildGenericFields(eventId);
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function buildPromulgationFields(eventId) {
+    var html = '';
+    html += '<div class="form-group">';
+    html += '<label>Para Number <span class="auto-field-label">(Auto-generated from Event Number)</span></label>';
+    html += '<input type="text" id="paraNum-' + eventId + '" class="auto-field" readonly>';
+    html += '</div>';
+    html += '<div class="main-grid">';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Village <span class="auto-field-label">(Auto-populated from Property Details, editable)</span></label>';
+    html += '<input type="text" id="promVillage-' + eventId + '" class="auto-field" oninput="updatePromulgationPreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'promVillage' + "'" + ')">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Taluka <span class="auto-field-label">(Auto-populated from Property Details, editable)</span></label>';
+    html += '<input type="text" id="promTaluka-' + eventId + '" class="auto-field" oninput="updatePromulgationPreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'promTaluka' + "'" + ')">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Name of party in entry <span style="color:var(--danger);">*</span></label>';
+    html += '<input type="text" id="promPartyName-' + eventId + '" class="prom-required-field" oninput="updatePromulgationPreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'promPartyName' + "'" + ')">';
+    html += '<div class="prom-validation-msg" id="promVal-promPartyName-' + eventId + '">Name of party in entry is required</div>';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Survey No. <span style="color:var(--danger);">*</span></label>';
+    html += '<input type="text" id="promSurveyNo-' + eventId + '" class="prom-required-field" oninput="updatePromulgationPreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'promSurveyNo' + "'" + ')">';
+    html += '<div class="prom-validation-msg" id="promVal-promSurveyNo-' + eventId + '">Survey No. is required</div>';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Area <span style="font-weight:400;font-size:0.85em;color:#666;">(Optional - leave blank if not applicable)</span></label>';
+    html += '<input type="text" id="promArea-' + eventId + '" oninput="updatePromulgationPreview(' + eventId + ')">';
+    html += '</div>';
+    html += '</div>';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Entry Number <span style="color:var(--danger);">*</span></label>';
+    html += '<input type="text" id="promEntryNo-' + eventId + '" class="prom-required-field" oninput="updatePromulgationPreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'promEntryNo' + "'" + ')">';
+    html += '<div class="prom-validation-msg" id="promVal-promEntryNo-' + eventId + '">Entry Number is required</div>';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Revenue Authority & Place <span style="color:var(--danger);">*</span></label>';
+    html += '<input type="text" id="promAuthorityPlace-' + eventId + '" class="prom-required-field" oninput="updatePromulgationPreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'promAuthorityPlace' + "'" + ')">';
+    html += '<div class="prom-validation-msg" id="promVal-promAuthorityPlace-' + eventId + '">Revenue Authority & Place is required</div>';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Document Type for Entry <span style="color:var(--danger);">*</span></label>';
+    html += '<select id="promDocType-' + eventId + '" class="prom-required-field" onchange="updatePromulgationPreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'promDocType' + "'" + ')">';
+    html += '<option value="">-- Select --</option>';
+    html += '<option value="True">True Copy</option>';
+    html += '<option value="Photo">Photo Copy</option>';
+    html += '<option value="Attested">Attested Copy</option>';
+    html += '</select>';
+    html += '<div class="prom-validation-msg" id="promVal-promDocType-' + eventId + '">Document Type is required</div>';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Annexure Number <span class="auto-field-label">(Auto-populated, editable)</span></label>';
+    html += '<input type="text" id="promAnnexureNum-' + eventId + '" class="auto-field" oninput="updatePromulgationPreview(' + eventId + ')">';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    html += '<div class="generated-narrative-box" id="generatedNarrativeBox-' + eventId + '">';
+    html += '<h4>&#128221; Generated Narrative (Auto-populated from above fields)</h4>';
+    html += '<div class="narrative-text" id="generatedNarrativeText-' + eventId + '"></div>';
+    html += '</div>';
+    return html;
+}
+
+function buildNewRevisionSurveyFields(eventId) {
+    var html = '';
+    html += '<div class="form-group">';
+    html += '<label>Para Number <span class="auto-field-label">(Auto-generated from Event Number)</span></label>';
+    html += '<input type="text" id="nrsParaNum-' + eventId + '" class="auto-field" readonly>';
+    html += '</div>';
+    html += '<div class="main-grid">';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Village <span class="auto-field-label">(Auto-populated from Property Details, editable)</span></label>';
+    html += '<input type="text" id="nrsVillage-' + eventId + '" class="auto-field" oninput="updateNewRevisionSurveyPreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'nrsVillage' + "'" + ')">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Taluka <span class="auto-field-label">(Auto-populated from Property Details, editable)</span></label>';
+    html += '<input type="text" id="nrsTaluka-' + eventId + '" class="auto-field" oninput="updateNewRevisionSurveyPreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'nrsTaluka' + "'" + ')">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Name of Person holding Agri. land <span style="color:var(--danger);">*</span></label>';
+    html += '<input type="text" id="nrsPartyName-' + eventId + '" class="prom-required-field" oninput="updateNewRevisionSurveyPreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'nrsPartyName' + "'" + ')">';
+    html += '<div class="prom-validation-msg" id="promVal-nrsPartyName-' + eventId + '">Name is required</div>';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Survey No. <span style="color:var(--danger);">*</span></label>';
+    html += '<input type="text" id="nrsSurveyNo-' + eventId + '" class="prom-required-field" oninput="updateNewRevisionSurveyPreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'nrsSurveyNo' + "'" + ')">';
+    html += '<div class="prom-validation-msg" id="promVal-nrsSurveyNo-' + eventId + '">Survey No. is required</div>';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Area <span style="font-weight:400;font-size:0.85em;color:#666;">(Optional - leave blank if not applicable)</span></label>';
+    html += '<input type="text" id="nrsArea-' + eventId + '" oninput="updateNewRevisionSurveyPreview(' + eventId + ')">';
+    html += '</div>';
+    html += '</div>';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Entry Number <span style="color:var(--danger);">*</span></label>';
+    html += '<input type="text" id="nrsEntryNo-' + eventId + '" class="prom-required-field" oninput="updateNewRevisionSurveyPreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'nrsEntryNo' + "'" + ')">';
+    html += '<div class="prom-validation-msg" id="promVal-nrsEntryNo-' + eventId + '">Entry Number is required</div>';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Revenue Authority & Place <span style="color:var(--danger);">*</span></label>';
+    html += '<input type="text" id="nrsAuthorityPlace-' + eventId + '" class="prom-required-field" oninput="updateNewRevisionSurveyPreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'nrsAuthorityPlace' + "'" + ')">';
+    html += '<div class="prom-validation-msg" id="promVal-nrsAuthorityPlace-' + eventId + '">Revenue Authority & Place is required</div>';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Document Type for Entry <span style="color:var(--danger);">*</span></label>';
+    html += '<select id="nrsDocType-' + eventId + '" class="prom-required-field" onchange="updateNewRevisionSurveyPreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'nrsDocType' + "'" + ')">';
+    html += '<option value="">-- Select --</option>';
+    html += '<option value="True">True Copy</option>';
+    html += '<option value="Photo">Photo Copy</option>';
+    html += '</select>';
+    html += '<div class="prom-validation-msg" id="promVal-nrsDocType-' + eventId + '">Document Type is required</div>';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Annexure Number <span class="auto-field-label">(Auto-populated, editable)</span></label>';
+    html += '<input type="text" id="nrsAnnexureNum-' + eventId + '" class="auto-field" oninput="updateNewRevisionSurveyPreview(' + eventId + ')">';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    html += '<div class="generated-narrative-box" id="generatedNarrativeBox-' + eventId + '">';
+    html += '<h4>&#128221; Generated Narrative (Auto-populated from above fields)</h4>';
+    html += '<div class="narrative-text" id="generatedNarrativeText-' + eventId + '"></div>';
+    html += '</div>';
+    return html;
+}
+
+function buildDemiseFields(eventId) {
+    var html = '';
+    html += '<div class="main-grid">';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Name of the person who died <span style="color:var(--danger);">*</span></label>';
+    html += '<input type="text" id="demiseName-' + eventId + '" class="prom-required-field" oninput="updateDemisePreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'demiseName' + "'" + ')">';
+    html += '<div class="prom-validation-msg" id="promVal-demiseName-' + eventId + '">Name is required</div>';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Number of Legal Heirs <span style="color:var(--danger);">*</span></label>';
+    html += '<select id="demiseHeirCount-' + eventId + '" class="prom-required-field" onchange="updateDemiseHeirInputs(' + eventId + '); updateDemisePreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'demiseHeirCount' + "'" + ')">';
+    html += '<option value="">-- Select --</option>';
+    html += '<option value="1">1</option>';
+    html += '<option value="2">2</option>';
+    html += '<option value="3">3</option>';
+    html += '<option value="4">4</option>';
+    html += '<option value="5">5</option>';
+    html += '<option value="6">6</option>';
+    html += '<option value="7">7</option>';
+    html += '<option value="8">8</option>';
+    html += '<option value="9">9</option>';
+    html += '<option value="10">10</option>';
+    html += '</select>';
+    html += '<div class="prom-validation-msg" id="promVal-demiseHeirCount-' + eventId + '">Number of heirs is required</div>';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Entry Number <span style="color:var(--danger);">*</span></label>';
+    html += '<input type="text" id="demiseEntryNo-' + eventId + '" class="prom-required-field" oninput="updateDemisePreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'demiseEntryNo' + "'" + ')">';
+    html += '<div class="prom-validation-msg" id="promVal-demiseEntryNo-' + eventId + '">Entry Number is required</div>';
+    html += '</div>';
+    html += '</div>';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Authority Name, Place and Date <span style="color:var(--danger);">*</span></label>';
+    html += '<input type="text" id="demiseAuthority-' + eventId + '" class="prom-required-field" oninput="updateDemisePreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'demiseAuthority' + "'" + ')">';
+    html += '<div class="prom-validation-msg" id="promVal-demiseAuthority-' + eventId + '">Authority details are required</div>';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Document Type <span style="color:var(--danger);">*</span></label>';
+    html += '<select id="demiseDocType-' + eventId + '" class="prom-required-field" onchange="updateDemisePreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'demiseDocType' + "'" + ')">';
+    html += '<option value="">-- Select --</option>';
+    html += '<option value="Photo Copy">Photo Copy</option>';
+    html += '<option value="True Copy">True Copy</option>';
+    html += '</select>';
+    html += '<div class="prom-validation-msg" id="promVal-demiseDocType-' + eventId + '">Document Type is required</div>';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Annexure Number <span class="auto-field-label">(Auto-populated, confirmable)</span></label>';
+    html += '<input type="text" id="demiseAnnexureNum-' + eventId + '" class="auto-field" oninput="updateDemisePreview(' + eventId + ')">';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Names of Legal Heirs <span style="color:var(--danger);">*</span> <span style="font-weight:400;font-size:0.85em;color:#666;">(Enter each name, auto-formatted with numbering)</span></label>';
+    html += '<div id="demiseHeirInputs-' + eventId + '" class="heir-inputs-container">';
+    html += '<p style="color:#999;font-size:0.9em;">Select "Number of Legal Heirs" above to generate input fields</p>';
+    html += '</div>';
+    html += '</div>';
+    html += '<div class="heir-preview-box" id="demiseHeirPreview-' + eventId + '" style="display:none;">';
+    html += '<h5>&#128221; Formatted Heirs Preview:</h5>';
+    html += '<div class="heir-preview-text" id="demiseHeirPreviewText-' + eventId + '"></div>';
+    html += '</div>';
+    html += '<div class="generated-narrative-box" id="generatedNarrativeBox-' + eventId + '">';
+    html += '<h4>&#128221; Generated Narrative (Auto-populated from above fields)</h4>';
+    html += '<div class="narrative-text" id="generatedNarrativeText-' + eventId + '"></div>';
+    html += '</div>';
+    return html;
+}
+
+function buildPartitionLifeFields(eventId) {
+    var html = '';
+    html += '<div class="main-grid">';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Name of Person Partitioning <span style="color:var(--danger);">*</span></label>';
+    html += '<input type="text" id="partLifeName-' + eventId + '" class="prom-required-field" oninput="updatePartitionLifePreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'partLifeName' + "'" + ')">';
+    html += '<div class="prom-validation-msg" id="promVal-partLifeName-' + eventId + '">Name is required</div>';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Year of Partition <span style="color:var(--danger);">*</span></label>';
+    html += '<input type="text" id="partLifeYear-' + eventId + '" class="prom-required-field" oninput="updatePartitionLifePreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'partLifeYear' + "'" + ')">';
+    html += '<div class="prom-validation-msg" id="promVal-partLifeYear-' + eventId + '">Year is required</div>';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Survey Number <span style="color:var(--danger);">*</span></label>';
+    html += '<input type="text" id="partLifeSurvey-' + eventId + '" class="prom-required-field" oninput="updatePartitionLifePreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'partLifeSurvey' + "'" + ')">';
+    html += '<div class="prom-validation-msg" id="promVal-partLifeSurvey-' + eventId + '">Survey Number is required</div>';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Area <span style="color:var(--danger);">*</span></label>';
+    html += '<input type="text" id="partLifeArea-' + eventId + '" class="prom-required-field" oninput="updatePartitionLifePreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'partLifeArea' + "'" + ')">';
+    html += '<div class="prom-validation-msg" id="promVal-partLifeArea-' + eventId + '">Area is required</div>';
+    html += '</div>';
+    html += '</div>';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Entry Number <span style="color:var(--danger);">*</span></label>';
+    html += '<input type="text" id="partLifeEntryNo-' + eventId + '" class="prom-required-field" oninput="updatePartitionLifePreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'partLifeEntryNo' + "'" + ')">';
+    html += '<div class="prom-validation-msg" id="promVal-partLifeEntryNo-' + eventId + '">Entry Number is required</div>';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Authority Name, Place and Date <span style="color:var(--danger);">*</span></label>';
+    html += '<input type="text" id="partLifeAuthority-' + eventId + '" class="prom-required-field" oninput="updatePartitionLifePreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'partLifeAuthority' + "'" + ')">';
+    html += '<div class="prom-validation-msg" id="promVal-partLifeAuthority-' + eventId + '">Authority details are required</div>';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Document Type <span style="color:var(--danger);">*</span></label>';
+    html += '<select id="partLifeDocType-' + eventId + '" class="prom-required-field" onchange="updatePartitionLifePreview(' + eventId + '); validatePromulgationField(' + eventId + ', ' + "'" + 'partLifeDocType' + "'" + ')">';
+    html += '<option value="">-- Select --</option>';
+    html += '<option value="Photo Copy">Photo Copy</option>';
+    html += '<option value="True Copy">True Copy</option>';
+    html += '</select>';
+    html += '<div class="prom-validation-msg" id="promVal-partLifeDocType-' + eventId + '">Document Type is required</div>';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Annexure Number <span class="auto-field-label">(Auto-populated, confirmable)</span></label>';
+    html += '<input type="text" id="partLifeAnnexureNum-' + eventId + '" class="auto-field" oninput="updatePartitionLifePreview(' + eventId + ')">';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Names of Legal Heirs who got the land <span style="color:var(--danger);">*</span> <span style="font-weight:400;font-size:0.85em;color:#666;">(Enter each name, auto-formatted with numbering)</span></label>';
+    html += '<div id="partLifeHeirInputs-' + eventId + '" class="heir-inputs-container">';
+    html += '<div class="form-group" style="margin-bottom:8px;">';
+    html += '<input type="text" id="partLifeHeir-0-' + eventId + '" placeholder="Heir 1" oninput="updatePartitionLifePreview(' + eventId + ')">';
+    html += '</div>';
+    html += '</div>';
+    html += '<button class="btn btn-secondary btn-small" onclick="addPartitionLifeHeirField(' + eventId + ')" style="margin-top:5px;">+ Add Heir</button>';
+    html += '</div>';
+    html += '<div class="heir-preview-box" id="partLifeHeirPreview-' + eventId + '" style="display:none;">';
+    html += '<h5>&#128221; Formatted Heirs Preview:</h5>';
+    html += '<div class="heir-preview-text" id="partLifeHeirPreviewText-' + eventId + '"></div>';
+    html += '</div>';
+    html += '<div class="generated-narrative-box" id="generatedNarrativeBox-' + eventId + '">';
+    html += '<h4>&#128221; Generated Narrative (Auto-populated from above fields)</h4>';
+    html += '<div class="narrative-text" id="generatedNarrativeText-' + eventId + '"></div>';
+    html += '</div>';
+    return html;
+}
+
+function buildSaleFields(eventId) {
+    var html = '';
+    html += '<div class="main-grid">';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Seller Names</label>';
+    html += '<input type="text" id="saleSeller-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Buyer Name</label>';
+    html += '<input type="text" id="saleBuyer-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Deed Serial Number</label>';
+    html += '<input type="text" id="saleDeedNo-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Date of Sale</label>';
+    html += '<input type="date" id="saleDate-' + eventId + '" onchange="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Entry Number</label>';
+    html += '<input type="text" id="saleEntryNo-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>VF Number</label>';
+    html += '<input type="text" id="saleVF-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+}
+
+function buildAttachmentFields(eventId) {
+    var html = '';
+    html += '<div class="main-grid">';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Authority Name</label>';
+    html += '<input type="text" id="attachAuthority-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Order Number</label>';
+    html += '<input type="text" id="attachOrderNo-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Date of Order</label>';
+    html += '<input type="date" id="attachDate-' + eventId + '" onchange="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Entry Number</label>';
+    html += '<input type="text" id="attachEntryNo-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+}
+
+function buildReleaseFields(eventId) {
+    var html = '';
+    html += '<div class="main-grid">';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Authority Name</label>';
+    html += '<input type="text" id="releaseAuthority-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Order Number</label>';
+    html += '<input type="text" id="releaseOrderNo-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Date of Order</label>';
+    html += '<input type="date" id="releaseDate-' + eventId + '" onchange="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Entry Number</label>';
+    html += '<input type="text" id="releaseEntryNo-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+}
+
+function buildPartitionFields(eventId) {
+    var html = '';
+    html += '<div class="main-grid">';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Names of Parties</label>';
+    html += '<input type="text" id="partNames-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Year of Partition</label>';
+    html += '<input type="text" id="partYear-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Entry Number</label>';
+    html += '<input type="text" id="partEntryNo-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>VF Number</label>';
+    html += '<input type="text" id="partVF-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+}
+
+function buildHeirDeclarationFields(eventId) {
+    var html = '';
+    html += '<div class="main-grid">';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Declarant Name</label>';
+    html += '<input type="text" id="heirDeclarant-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Number of Heirs</label>';
+    html += '<input type="text" id="heirCount-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Heir Names</label>';
+    html += '<input type="text" id="heirNames-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Year</label>';
+    html += '<input type="text" id="heirYear-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+}
+
+function buildCorrectionDeedFields(eventId) {
+    var html = '';
+    html += '<div class="main-grid">';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Original Deed Number</label>';
+    html += '<input type="text" id="corrOriginalNo-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Original Deed Date</label>';
+    html += '<input type="date" id="corrOriginalDate-' + eventId + '" onchange="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Correction Deed Number</label>';
+    html += '<input type="text" id="corrDeedNo-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Correction Deed Date</label>';
+    html += '<input type="date" id="corrDeedDate-' + eventId + '" onchange="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+}
+
+function buildNAConversionFields(eventId) {
+    var html = '';
+    html += '<div class="main-grid">';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Applicant Name</label>';
+    html += '<input type="text" id="naApplicant-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Area</label>';
+    html += '<input type="text" id="naArea-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Order Number</label>';
+    html += '<input type="text" id="naOrderNo-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Date</label>';
+    html += '<input type="date" id="naDate-' + eventId + '" onchange="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+}
+
+function buildLayoutApprovalFields(eventId) {
+    var html = '';
+    html += '<div class="main-grid">';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Authority</label>';
+    html += '<input type="text" id="layoutAuthority-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Order Number</label>';
+    html += '<input type="text" id="layoutOrderNo-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Date</label>';
+    html += '<input type="date" id="layoutDate-' + eventId + '" onchange="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Details</label>';
+    html += '<input type="text" id="layoutDetails-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+}
+
+function buildMutationFields(eventId) {
+    var html = '';
+    html += '<div class="main-grid">';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Area</label>';
+    html += '<input type="text" id="mutArea-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Name</label>';
+    html += '<input type="text" id="mutName-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>VF Number</label>';
+    html += '<input type="text" id="mutVF-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Village</label>';
+    html += '<input type="text" id="mutVillage-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+}
+
+function buildConstructionPermissionFields(eventId) {
+    var html = '';
+    html += '<div class="main-grid">';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Applicant Name</label>';
+    html += '<input type="text" id="consApplicant-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Property Description</label>';
+    html += '<input type="text" id="consProperty-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Authority</label>';
+    html += '<input type="text" id="consAuthority-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Date</label>';
+    html += '<input type="date" id="consDate-' + eventId + '" onchange="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+}
+
+function buildCompletionCertificateFields(eventId) {
+    var html = '';
+    html += '<div class="form-group">';
+    html += '<label>Date of Certificate</label>';
+    html += '<input type="date" id="compDate-' + eventId + '" onchange="triggerAutoSave()">';
+    html += '</div>';
+    return html;
+}
+
+function buildNoDuesFields(eventId) {
+    var html = '';
+    html += '<div class="main-grid">';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Name</label>';
+    html += '<input type="text" id="ndName-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Authority</label>';
+    html += '<input type="text" id="ndAuthority-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Date</label>';
+    html += '<input type="date" id="ndDate-' + eventId + '" onchange="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+}
+
+function buildTaxReceiptFields(eventId) {
+    var html = '';
+    html += '<div class="main-grid">';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Name</label>';
+    html += '<input type="text" id="taxName-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Property Description</label>';
+    html += '<input type="text" id="taxProperty-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Receipt Number</label>';
+    html += '<input type="text" id="taxReceiptNo-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Date</label>';
+    html += '<input type="date" id="taxDate-' + eventId + '" onchange="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+}
+
+function buildSROSearchFields(eventId) {
+    var html = '';
+    html += '<div class="main-grid">';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>SRO Morbi</label>';
+    html += '<input type="text" id="sroMorbi-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>SRO Taluka</label>';
+    html += '<input type="text" id="sroTaluka-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '<div>';
+    html += '<div class="form-group">';
+    html += '<label>Search Date</label>';
+    html += '<input type="date" id="sroDate-' + eventId + '" onchange="triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group">';
+    html += '<label>Name</label>';
+    html += '<input type="text" id="sroName-' + eventId + '" oninput="triggerAutoSave()">';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+}
+
+function buildOtherFields(eventId) {
+    var html = '';
+    html += '<div class="form-group">';
+    html += '<label>Custom Narrative Description</label>';
+    html += '<textarea id="otherNarrative-' + eventId + '" rows="4" oninput="triggerAutoSave()"></textarea>';
+    html += '</div>';
+    return html;
+}
+
+function buildGenericFields(eventId) {
+    var html = '';
+    html += '<div class="form-group">';
+    html += '<label>Narrative Description</label>';
+    html += '<textarea id="narrative-' + eventId + '" rows="4" oninput="triggerAutoSave()"></textarea>';
+    html += '</div>';
+    return html;
+}
+
+// ==================== DEMISE EVENT FUNCTIONS ====================
+function updateDemiseHeirInputs(eventId) {
+    var count = parseInt(document.getElementById('demiseHeirCount-' + eventId).value) || 0;
+    var container = document.getElementById('demiseHeirInputs-' + eventId);
+    if (!container) return;
+
+    container.innerHTML = '';
+    for (var i = 0; i < count; i++) {
+        var div = document.createElement('div');
+        div.className = 'form-group';
+        div.style.marginBottom = '8px';
+        div.innerHTML = '<input type="text" id="demiseHeir-' + i + '-' + eventId + '" placeholder="Heir ' + (i + 1) + '" oninput="updateDemisePreview(' + eventId + ')">';
+        container.appendChild(div);
+    }
+}
+
+function getDemiseHeirNames(eventId) {
+    var count = parseInt(document.getElementById('demiseHeirCount-' + eventId).value) || 0;
+    var names = [];
+    for (var i = 0; i < count; i++) {
+        var el = document.getElementById('demiseHeir-' + i + '-' + eventId);
+        if (el && el.value.trim()) names.push(el.value.trim());
+    }
+    return names;
+}
+
+function formatHeirNames(names) {
+    if (!names || names.length === 0) return '';
+    var formatted = [];
+    for (var i = 0; i < names.length; i++) {
+        formatted.push((i + 1) + '. ' + names[i]);
+    }
+    return formatted.join(', ');
+}
+
+function updateDemisePreview(eventId) {
+    var paraNum = document.getElementById('paraNum-' + eventId);
+    var para = paraNum ? paraNum.value : '[' + getEventDisplayIndex(eventId) + ']';
+    var name = document.getElementById('demiseName-' + eventId).value || '[Name of the person who died]';
+    var heirCount = document.getElementById('demiseHeirCount-' + eventId).value || '[Number of Legal Heirs]';
+    var heirNames = getDemiseHeirNames(eventId);
+    var formattedHeirs = heirNames.length > 0 ? formatHeirNames(heirNames) : '[Names of Legal Heirs]';
+    var entryNo = document.getElementById('demiseEntryNo-' + eventId).value || '[entry number]';
+    var authority = document.getElementById('demiseAuthority-' + eventId).value || '[Authority Name, Place and Date]';
+    var docType = document.getElementById('demiseDocType-' + eventId).value || '[Photo Copy / True Copy]';
+    var annexureNum = document.getElementById('demiseAnnexureNum-' + eventId).value || document.getElementById('annexureNum-' + eventId).value || '[Annexure Number]';
+
+    var previewText = para + '	Thereafter on demise of ' + name + ', names of total ' + heirCount + ' legal heirs namely ' + formattedHeirs + ' have been enter in revenu record in this regard entry no.' + entryNo + ' has been made in V.F. No. 6 which is duly certified by ' + authority + '. ' + docType + ' of entry no. ' + entryNo + ' is attached herewith and marked as ANNEXURE - ' + annexureNum;
+
+    var previewEl = document.getElementById('generatedNarrativeText-' + eventId);
+    if (previewEl) previewEl.textContent = previewText;
+
+    // Update heir preview
+    var heirPreviewBox = document.getElementById('demiseHeirPreview-' + eventId);
+    var heirPreviewText = document.getElementById('demiseHeirPreviewText-' + eventId);
+    if (heirNames.length > 0) {
+        heirPreviewBox.style.display = 'block';
+        heirPreviewText.textContent = '"' + formattedHeirs + '"';
+    } else {
+        heirPreviewBox.style.display = 'none';
+    }
+
+    // Auto-update annexure description
+    var annexDescEl = document.getElementById('annexureDesc-' + eventId);
+    var mainDocType = document.getElementById('docType-' + eventId);
+    if (annexDescEl && entryNo && docType) {
+        annexDescEl.value = docType + ' of entry no. ' + entryNo;
+        updateEventSummary(eventId);
+    }
+    if (mainDocType && docType) {
+        mainDocType.value = docType;
+        updateEventSummary(eventId);
+    }
+
+    triggerAutoSave();
+}
+
+// ==================== PARTITION LIFE EVENT FUNCTIONS ====================
+var partitionLifeHeirCounts = {};
+
+function addPartitionLifeHeirField(eventId) {
+    if (!partitionLifeHeirCounts[eventId]) partitionLifeHeirCounts[eventId] = 1;
+    partitionLifeHeirCounts[eventId]++;
+    var container = document.getElementById('partLifeHeirInputs-' + eventId);
+    if (!container) return;
+
+    var div = document.createElement('div');
+    div.className = 'form-group';
+    div.style.marginBottom = '8px';
+    div.innerHTML = '<input type="text" id="partLifeHeir-' + partitionLifeHeirCounts[eventId] + '-' + eventId + '" placeholder="Heir ' + (partitionLifeHeirCounts[eventId] + 1) + '" oninput="updatePartitionLifePreview(' + eventId + ')">';
+    container.appendChild(div);
+}
+
+function getPartitionLifeHeirNames(eventId) {
+    var names = [];
+    var idx = 0;
+    while (true) {
+        var el = document.getElementById('partLifeHeir-' + idx + '-' + eventId);
+        if (!el) break;
+        if (el.value.trim()) names.push(el.value.trim());
+        idx++;
+    }
+    return names;
+}
+
+function updatePartitionLifePreview(eventId) {
+    var paraNum = document.getElementById('paraNum-' + eventId);
+    var para = paraNum ? paraNum.value : '[' + getEventDisplayIndex(eventId) + ']';
+    var name = document.getElementById('partLifeName-' + eventId).value || '[Name of Person Partitioning]';
+    var year = document.getElementById('partLifeYear-' + eventId).value || '[year]';
+    var heirNames = getPartitionLifeHeirNames(eventId);
+    var formattedHeirs = heirNames.length > 0 ? formatHeirNames(heirNames) : '[Name/s of Legal Heir who got the land]';
+    var area = document.getElementById('partLifeArea-' + eventId).value || '[Area]';
+    var surveyNo = document.getElementById('partLifeSurvey-' + eventId).value || '[Survey Number]';
+    var entryNo = document.getElementById('partLifeEntryNo-' + eventId).value || '[entry number]';
+    var authority = document.getElementById('partLifeAuthority-' + eventId).value || '[Authority Name, Place and Date]';
+    var docType = document.getElementById('partLifeDocType-' + eventId).value || '[Photo Copy / True Copy]';
+    var annexureNum = document.getElementById('partLifeAnnexureNum-' + eventId).value || document.getElementById('annexureNum-' + eventId).value || '[Annexure Number]';
+
+    var previewText = para + '	Thereafter, ' + name + ' had partitioned his agriculture land between his family members during his life time in the year ' + year + '. On such partition ' + formattedHeirs + ' had agri.land ' + area + ' of S.No. ' + surveyNo + '. In this regard entry no. ' + entryNo + ' has been made in V.F.No. 6 which is duly certified by ' + authority + '. ' + docType + ' of entry no. ' + entryNo + ' is attached herewith and marked as ANNEXURE - ' + annexureNum + '.';
+
+    var previewEl = document.getElementById('generatedNarrativeText-' + eventId);
+    if (previewEl) previewEl.textContent = previewText;
+
+    // Update heir preview
+    var heirPreviewBox = document.getElementById('partLifeHeirPreview-' + eventId);
+    var heirPreviewText = document.getElementById('partLifeHeirPreviewText-' + eventId);
+    if (heirNames.length > 0) {
+        heirPreviewBox.style.display = 'block';
+        heirPreviewText.textContent = '"' + formattedHeirs + '"';
+    } else {
+        heirPreviewBox.style.display = 'none';
+    }
+
+    // Auto-update annexure description
+    var annexDescEl = document.getElementById('annexureDesc-' + eventId);
+    var mainDocType = document.getElementById('docType-' + eventId);
+    if (annexDescEl && entryNo && docType) {
+        annexDescEl.value = docType + ' of entry no. ' + entryNo;
+        updateEventSummary(eventId);
+    }
+    if (mainDocType && docType) {
+        mainDocType.value = docType;
+        updateEventSummary(eventId);
+    }
+
+    triggerAutoSave();
+}
+
+function getEventDisplayIndex(eventId) {
+    var idx = 1;
+    for (var i = 0; i < events.length; i++) {
+        if (events[i] && events[i].id === eventId) return idx;
+        if (events[i]) idx++;
+    }
+    return idx;
+}
+
+// ==================== NEW REVISION SURVEY FUNCTIONS ====================
+function updateNewRevisionSurveyPreview(eventId) {
+    var paraNum = document.getElementById('nrsParaNum-' + eventId);
+    var para = paraNum ? paraNum.value : '[' + getEventDisplayIndex(eventId) + ']';
+    var village = document.getElementById('nrsVillage-' + eventId).value || '[Village]';
+    var taluka = document.getElementById('nrsTaluka-' + eventId).value || '[Taluka]';
+    var partyName = document.getElementById('nrsPartyName-' + eventId).value || '[Name of Person holding Agri. land]';
+    var surveyNo = document.getElementById('nrsSurveyNo-' + eventId).value || '[Survey Number]';
+    var area = document.getElementById('nrsArea-' + eventId).value || '';
+    var entryNo = document.getElementById('nrsEntryNo-' + eventId).value || '[entry number]';
+    var authorityPlace = document.getElementById('nrsAuthorityPlace-' + eventId).value || '';
+    var authority = '[Revenue authority]';
+    var place = '[Place]';
+    if (authorityPlace) {
+        var commaIdx = authorityPlace.indexOf(',');
+        if (commaIdx !== -1) {
+            authority = authorityPlace.substring(0, commaIdx).trim();
+            place = authorityPlace.substring(commaIdx + 1).trim();
+        } else { authority = authorityPlace.trim(); place = ''; }
+    }
+    var docType = document.getElementById('nrsDocType-' + eventId).value || '[Photo Copy / True Copy]';
+    var annexureNum = document.getElementById('nrsAnnexureNum-' + eventId).value || document.getElementById('annexureNum-' + eventId).value || '[Annexure Number]';
+
+    var previewText = para + '	At the time of new revision survey in Village ' + village + ', Taluka ' + taluka + ', ' + partyName + ' was holding agricultural land of S. No. ' + surveyNo;
+
+    // Only include area if it has a value
+    if (area && area.trim()) {
+        previewText += ' ' + area;
+    }
+
+    previewText += '. In this regard entry no. ' + entryNo + ' has been made in V.F.No. 6 which is duly certified by ' + authority;
+    if (place) previewText += ', ' + place;
+    previewText += '. ' + docType + ' of entry no. ' + entryNo + ' is attached herewith and marked as ANNEXURE - ' + annexureNum + '.';
+
+    var previewEl = document.getElementById('generatedNarrativeText-' + eventId);
+    if (previewEl) previewEl.textContent = previewText;
+
+    // Auto-update annexure description
+    var annexDescEl = document.getElementById('annexureDesc-' + eventId);
+    var mainDocType = document.getElementById('docType-' + eventId);
+    if (annexDescEl && entryNo && docType) {
+        annexDescEl.value = docType + ' of entry no. ' + entryNo;
+        updateEventSummary(eventId);
+    }
+    if (mainDocType && docType) {
+        if (docType === 'True') mainDocType.value = 'True Copy';
+        else if (docType === 'Photo') mainDocType.value = 'Photo Copy';
+        updateEventSummary(eventId);
+    }
+
+    triggerAutoSave();
+}
+
+// ==================== PROMULGATION LIVE PREVIEW ====================
+function updatePromulgationPreview(eventId) {
+    var paraNum = document.getElementById('paraNum-' + eventId).value || '[Para Number]';
+    var village = document.getElementById('promVillage-' + eventId).value || '[Village]';
+    var taluka = document.getElementById('promTaluka-' + eventId).value || '[Taluka]';
+    var partyName = document.getElementById('promPartyName-' + eventId).value || '[Name of Party in Promulgation entry]';
+    var surveyNo = document.getElementById('promSurveyNo-' + eventId).value || '[Survey No.]';
+    var area = document.getElementById('promArea-' + eventId).value || '';
+    var entryNo = document.getElementById('promEntryNo-' + eventId).value || '[Entry No.]';
+    var authorityPlace = document.getElementById('promAuthorityPlace-' + eventId).value || '[Revenue Authority certifying Entry, Name, Place and Date]';
+
+    var docTypeValue = document.getElementById('promDocType-' + eventId).value || '';
+    var docType = '';
+    if (docTypeValue === 'True') docType = 'True Copy of';
+    else if (docTypeValue === 'Photo') docType = 'Photo Copy of';
+    else if (docTypeValue === 'Attested') docType = 'Attested Copy of';
+    else docType = '[Photo Copy of / True Copy of / Attested Copy of]';
+
+    var annexureNum = document.getElementById('promAnnexureNum-' + eventId).value || document.getElementById('annexureNum-' + eventId).value || '[Annexure Number]';
+
+    var previewText = paraNum + '	At the time of promulgation of record of rights in Village ' + village + ', Taluka ' + taluka + ', ' + partyName + ' was holding agricultural land of S. No. ' + surveyNo;
+
+    // Only include area if it has a value
+    if (area && area.trim()) {
+        previewText += ' ' + area;
+    }
+
+    previewText += '. In this respect promulgation entry no. ' + entryNo + ' has been made in V.F.No. 6. which is duly certified by ' + authorityPlace + '. ' + docType + ' the entry no ' + entryNo + ' is attached herewith and marked as ANNEXURE – ' + annexureNum;
+
+    var previewEl = document.getElementById('generatedNarrativeText-' + eventId);
+    if (previewEl) previewEl.textContent = previewText;
+
+    // Update heir preview (not applicable for promulgation, but keep for consistency)
+    var annexDescEl = document.getElementById('annexureDesc-' + eventId);
+    var mainDocType = document.getElementById('docType-' + eventId);
+    if (annexDescEl && entryNo && docTypeValue) {
+        var descDocType = '';
+        if (docTypeValue === 'True') descDocType = 'True Copy of';
+        else if (docTypeValue === 'Photo') descDocType = 'Photo Copy of';
+        else if (docTypeValue === 'Attested') descDocType = 'Attested Copy of';
+        annexDescEl.value = descDocType + ' entry no. ' + entryNo;
+        updateEventSummary(eventId);
+    }
+    if (mainDocType && docTypeValue) {
+        if (docTypeValue === 'True') mainDocType.value = 'True Copy';
+        else if (docTypeValue === 'Photo') mainDocType.value = 'Photo Copy';
+        else if (docTypeValue === 'Attested') mainDocType.value = 'Attested Copy';
+        updateEventSummary(eventId);
+    }
+    triggerAutoSave();
+}
+
+function updatePromulgationParaNumbers() {
+    var displayNum = 1;
+    for (var i = 0; i < events.length; i++) {
+        if (!events[i]) continue;
+        var eid = events[i].id;
+        var eventType = document.getElementById('eventType-' + eid);
+        if (eventType && eventType.value === 'record_of_rights') {
+            var paraNumEl = document.getElementById('paraNum-' + eid);
+            if (paraNumEl) { paraNumEl.value = '[' + displayNum + ']'; updatePromulgationPreview(eid); }
+        }
+        if (eventType && eventType.value === 'new_revision_survey') {
+            var nrsParaNumEl = document.getElementById('nrsParaNum-' + eid);
+            if (nrsParaNumEl) { nrsParaNumEl.value = '[' + displayNum + ']'; updateNewRevisionSurveyPreview(eid); }
+        }
+        displayNum++;
+    }
+}
+
+// ==================== EVENT SUMMARY & COLLAPSE ====================
+function updateEventSummary(eventId) {
+    var annexNum = document.getElementById('annexureNum-' + eventId);
+    var docType = document.getElementById('docType-' + eventId);
+    var annexDesc = document.getElementById('annexureDesc-' + eventId);
+    var eventType = document.getElementById('eventType-' + eventId);
+
+    var summaryAnnex = document.getElementById('eventSummaryAnnex-' + eventId);
+    var summaryType = document.getElementById('eventSummaryType-' + eventId);
+    var summaryDesc = document.getElementById('eventSummaryDesc-' + eventId);
+
+    if (summaryAnnex) summaryAnnex.textContent = annexNum && annexNum.value ? 'ANNEX-' + annexNum.value : 'ANNEX-??';
+    if (summaryType) {
+        var typeName = eventType && eventType.value ? (eventTypeNames[eventType.value] || eventType.value) : 'No Event Type';
+        summaryType.textContent = typeName;
+    }
+    if (summaryDesc) {
+        var desc = annexDesc && annexDesc.value ? annexDesc.value : 'No description';
+        if (desc.length > 60) desc = desc.substring(0, 60) + '...';
+        summaryDesc.textContent = desc;
+    }
+}
+
+function saveAndCollapseEvent(eventId) {
+    var eventCard = document.getElementById('event-' + eventId);
+    if (!eventCard) return;
+
+    var eventType = document.getElementById('eventType-' + eventId).value;
+    var annexNum = document.getElementById('annexureNum-' + eventId).value;
+    var docType = document.getElementById('docType-' + eventId).value;
+
+    if (!eventType) { showToast('Please select Event Type'); return; }
+    if (!annexNum) { showToast('Please enter Annexure Number'); return; }
+    if (!docType) { showToast('Please select Document Type'); return; }
+
+    // Validate event-specific required fields
+    var requiredFields = [];
+    switch(eventType) {
+        case 'record_of_rights':
+            requiredFields = ['promPartyName', 'promSurveyNo', 'promEntryNo', 'promAuthorityPlace', 'promDocType'];
+            break;
+        case 'new_revision_survey':
+            requiredFields = ['nrsPartyName', 'nrsSurveyNo', 'nrsEntryNo', 'nrsAuthorityPlace', 'nrsDocType'];
+            break;
+        case 'demise':
+            requiredFields = ['demiseName', 'demiseHeirCount', 'demiseEntryNo', 'demiseAuthority', 'demiseDocType'];
+            break;
+        case 'partition_life':
+            requiredFields = ['partLifeName', 'partLifeYear', 'partLifeSurvey', 'partLifeArea', 'partLifeEntryNo', 'partLifeAuthority', 'partLifeDocType'];
+            break;
+    }
+
+    for (var i = 0; i < requiredFields.length; i++) {
+        var field = document.getElementById(requiredFields[i] + '-' + eventId);
+        if (!field || !field.value.trim()) { showToast('Please fill all required fields'); return; }
+    }
+
+    // Special handling for New Revision Survey - area confirmation
+    if (eventType === 'new_revision_survey') {
+        var areaField = document.getElementById('nrsArea-' + eventId);
+        if (!areaField || !areaField.value.trim()) {
+            // Show confirmation dialog
+            confirmDialogEventId = eventId;
+            showConfirmDialog(
+                'Area is not mentioned for this New Revision Survey event. Do you want to proceed without area?',
+                function(confirmed) {
+                    if (confirmed) {
+                        // User confirmed - proceed without area
+                        finalizeSaveAndCollapseEvent(eventId);
+                    }
+                    // If not confirmed, stay on the event form
+                }
+            );
+            return; // Wait for dialog response
+        }
+    }
+
+    // Special handling for Promulgation - area confirmation
+    if (eventType === 'record_of_rights') {
+        var areaField = document.getElementById('promArea-' + eventId);
+        if (!areaField || !areaField.value.trim()) {
+            // Show confirmation dialog
+            confirmDialogEventId = eventId;
+            showConfirmDialog(
+                'Area has not been mentioned for this Promulgation event. Do you want to continue without mentioning area?',
+                function(confirmed) {
+                    if (confirmed) {
+                        // User confirmed - proceed without area
+                        finalizeSaveAndCollapseEvent(eventId);
+                    }
+                    // If not confirmed, stay on the event form
+                }
+            );
+            return; // Wait for dialog response
+        }
+    }
+
+    finalizeSaveAndCollapseEvent(eventId);
+}
+
+function finalizeSaveAndCollapseEvent(eventId) {
+    updateEventSummary(eventId);
+    var eventCard = document.getElementById('event-' + eventId);
+    eventCard.classList.add('completed');
+
+    var statusEl = document.getElementById('eventStatus-' + eventId);
+    if (statusEl) statusEl.innerHTML = '<span class="completion-check">&#10003;</span>';
+
+    triggerAutoSave();
+    showToast('Event saved and collapsed');
+}
+
+function updateEventIcon(eventId) {
+    var type = document.getElementById('eventType-' + eventId).value;
+    var icon = eventTypeIcons[type] || '&#128196;';
+    var iconEl = document.getElementById('eventIcon-' + eventId);
+    if (iconEl) iconEl.innerHTML = icon;
+    var label = eventTypeNames[type] || '';
+    var labelEl = document.getElementById('eventTypeLabel-' + eventId);
+    if (labelEl) labelEl.textContent = label ? '- ' + label : '';
+}
+
+function toggleEventCollapse(eventId) {
+    var card = document.getElementById('event-' + eventId);
+    if (!card) return;
+    if (card.classList.contains('completed')) {
+        card.classList.remove('completed');
+        var body = document.getElementById('eventBody-' + eventId);
+        if (body) body.style.display = 'block';
+    } else {
+        card.classList.toggle('collapsed');
+        var body = document.getElementById('eventBody-' + eventId);
+        if (body) body.style.display = card.classList.contains('collapsed') ? 'none' : 'block';
+    }
+}
+
+function moveEvent(eventId, direction) {
+    var currentIdx = -1;
+    for (var i = 0; i < events.length; i++) {
+        if (events[i] && events[i].id === eventId) { currentIdx = i; break; }
+    }
+    if (currentIdx === -1) return;
+    var newIdx = currentIdx + direction;
+    if (newIdx < 0 || newIdx >= events.length || !events[newIdx]) return;
+    var temp = events[currentIdx];
+    events[currentIdx] = events[newIdx];
+    events[newIdx] = temp;
+    rebuildEventsDOM();
+    updateAllEventNumbers();
+    updateSuggestedAnnexures();
+    validateAnnexureNumbers();
+    updatePromulgationParaNumbers();
+    triggerAutoSave();
+}
+
+function duplicateEvent(eventId) {
+    var source = null;
+    for (var i = 0; i < events.length; i++) {
+        if (events[i] && events[i].id === eventId) { source = events[i]; break; }
+    }
+    if (!source) return;
+    addEvent();
+    var newId = events[events.length - 1].id;
+    var srcType = document.getElementById('eventType-' + eventId);
+    if (srcType) {
+        document.getElementById('eventType-' + newId).value = srcType.value;
+        updateEventFields(newId);
+        updateEventIcon(newId);
+    }
+    triggerAutoSave();
+    showToast('Event duplicated');
+}
+
+function rebuildEventsDOM() {
+    var container = document.getElementById('eventsContainer');
+    var cards = Array.from(container.querySelectorAll('.event-card'));
+    var sortedCards = [];
+    for (var i = 0; i < events.length; i++) {
+        if (events[i]) {
+            for (var j = 0; j < cards.length; j++) {
+                if (cards[j].id === 'event-' + events[i].id) { sortedCards.push(cards[j]); break; }
+            }
+        }
+    }
+    container.innerHTML = '';
+    sortedCards.forEach(function(card) { container.appendChild(card); });
+}
+
+function updateAllEventNumbers() {
+    var container = document.getElementById('eventsContainer');
+    var cards = container.querySelectorAll('.event-card');
+    var displayNum = 1;
+    for (var i = 0; i < events.length; i++) {
+        if (!events[i]) continue;
+        var card = document.getElementById('event-' + events[i].id);
+        if (card) {
+            var numSpan = card.querySelector('.event-number');
+            if (numSpan) {
+                var icon = numSpan.querySelector('.event-type-icon');
+                var label = numSpan.querySelector('#eventTypeLabel-' + events[i].id);
+                var status = numSpan.querySelector('#eventStatus-' + events[i].id);
+                var labelText = label ? label.textContent : '';
+                var statusHTML = status ? status.innerHTML : '';
+                numSpan.innerHTML = '';
+                if (icon) numSpan.appendChild(icon);
+                numSpan.appendChild(document.createTextNode('Event [' + displayNum + '] '));
+                if (label) { label.textContent = labelText; numSpan.appendChild(label); }
+                if (status) { status.innerHTML = statusHTML; numSpan.appendChild(status); }
+            }
+            displayNum++;
+        }
+    }
+}
+
+function getSuggestedAnnexure() {
+    var num = 1;
+    for (var i = 0; i < events.length; i++) {
+        if (events[i]) { num++; num += events[i].subCount; }
+    }
+    return num.toString().padStart(2, '0');
+}
+
+function updateSuggestedAnnexures() {
+    var currentNum = 1;
+    for (var i = 0; i < events.length; i++) {
+        if (!events[i]) continue;
+        var el = document.getElementById('annexureNum-' + events[i].id);
+        if (el) {
+            var suggested = currentNum.toString().padStart(2, '0');
+            var suggestedDiv = document.getElementById('suggestedAnnexure-' + events[i].id);
+            if (suggestedDiv) suggestedDiv.innerHTML = '<strong>Suggested Annexure:</strong> ' + suggested;
+            var currentVal = el.value;
+            if (!currentVal || /^\d{2}$/.test(currentVal)) el.value = suggested;
+            currentNum++;
+            currentNum += events[i].subCount;
+        }
+    }
+}
+
+// ==================== SUB-ANNEXURE ====================
+function addSubAnnexure(parentEventId) {
+    var event = null;
+    for (var i = 0; i < events.length; i++) {
+        if (events[i] && events[i].id === parentEventId) { event = events[i]; break; }
+    }
+    if (!event) return;
+    event.subCount++;
+    var subId = event.subCount;
+    var parentAnnexure = document.getElementById('annexureNum-' + parentEventId).value || "XX";
+    var suggestedSub = parentAnnexure + "/" + subId;
+    var defaultSubDocType = '';
+    if (reportType === 'takeover') defaultSubDocType = 'Photo Copy';
+
+    var subDiv = document.createElement('div');
+    subDiv.className = 'annexure-row';
+    subDiv.style.marginLeft = '30px';
+    subDiv.style.background = '#fff3e0';
+    subDiv.id = 'subRow-' + parentEventId + '-' + subId;
+
+    var html = '<div class="form-group" style="margin-bottom: 0;">';
+    html += '<label>Sub-Annexure Number</label>';
+    html += '<input type="text" id="subAnnexureNum-' + parentEventId + '-' + subId + '" value="' + suggestedSub + '" onchange="validateAnnexureNumbers(); triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group" style="margin-bottom: 0;">';
+    html += '<label>Document Type</label>';
+    html += '<select id="subDocType-' + parentEventId + '-' + subId + '" onchange="updateEventSummary(' + parentEventId + '); triggerAutoSave()">';
+    html += '<option value="">-- Select --</option>';
+    html += '<option value="Original">Original</option>';
+    html += '<option value="Photo Copy">Photo Copy</option>';
+    html += '<option value="True Copy">True Copy</option>';
+    html += '<option value="Attested Copy">Attested Copy</option>';
+    html += '<option value="Certified Copy">Certified Copy</option>';
+    html += '</select>';
+    html += '</div>';
+    html += '<div class="form-group" style="margin-bottom: 0;">';
+    html += '<label style="visibility: hidden;">Action</label>';
+    html += '<div class="checkbox-group" style="margin-bottom: 0;">';
+    html += '<input type="checkbox" id="subOriginalReq-' + parentEventId + '-' + subId + '" onchange="triggerAutoSave()">';
+    html += '<label for="subOriginalReq-' + parentEventId + '-' + subId + '">Original Required</label>';
+    html += '</div>';
+    html += '</div>';
+    html += '<div class="form-group" style="margin-bottom: 0;">';
+    html += '<label>Document Description</label>';
+    html += '<input type="text" id="subAnnexureDesc-' + parentEventId + '-' + subId + '" oninput="updateEventSummary(' + parentEventId + '); triggerAutoSave()">';
+    html += '</div>';
+    html += '<div class="form-group" style="margin-bottom: 0;">';
+    html += '<button class="btn btn-danger btn-small" onclick="removeSubAnnexure(' + parentEventId + ', ' + subId + ')">Remove</button>';
+    html += '</div>';
+
+    subDiv.innerHTML = html;
+    document.getElementById('subAnnexures-' + parentEventId).appendChild(subDiv);
+
+    if (reportType === 'takeover' && defaultSubDocType) {
+        var subDocType = document.getElementById('subDocType-' + parentEventId + '-' + subId);
+        if (subDocType) subDocType.value = defaultSubDocType;
+    }
+    updateSuggestedAnnexures();
+    validateAnnexureNumbers();
+    triggerAutoSave();
+}
+
+function removeSubAnnexure(parentId, subId) {
+    var row = document.getElementById('subRow-' + parentId + '-' + subId);
+    if (row) {
+        row.remove();
+        for (var i = 0; i < events.length; i++) {
+            if (events[i] && events[i].id === parentId) { events[i].subCount--; break; }
+        }
+        updateSuggestedAnnexures();
+        validateAnnexureNumbers();
+        triggerAutoSave();
+    }
+}
+
+function onParentAnnexureChange(eventId) {
+    var parentAnnexEl = document.getElementById('annexureNum-' + eventId);
+    if (!parentAnnexEl) return;
+    var newParentNum = parentAnnexEl.value.trim();
+    if (!newParentNum) return;
+    var event = null;
+    for (var i = 0; i < events.length; i++) {
+        if (events[i] && events[i].id === eventId) { event = events[i]; break; }
+    }
+    if (!event || event.subCount === 0) return;
+    for (var s = 1; s <= event.subCount; s++) {
+        var subEl = document.getElementById('subAnnexureNum-' + eventId + '-' + s);
+        if (subEl) {
+            var oldVal = subEl.value;
+            var suffix = '1';
+            var slashIdx = oldVal.lastIndexOf('/');
+            if (slashIdx !== -1) suffix = oldVal.substring(slashIdx + 1);
+            subEl.value = newParentNum + '/' + suffix;
+        }
+    }
+    validateAnnexureNumbers();
+    triggerAutoSave();
+    showToast('Sub-annexure numbers updated');
+}
+
+// ==================== AUTO-RENUMBERING ON EVENT REMOVAL ====================
+function removeEvent(eventId) {
+    if (confirm('Are you sure you want to remove this event?')) {
+        var element = document.getElementById('event-' + eventId);
+        if (element) {
+            element.remove();
+            for (var i = 0; i < events.length; i++) {
+                if (events[i] && events[i].id === eventId) { events[i] = null; break; }
+            }
+            // Compact array
+            events = events.filter(function(e) { return e !== null; });
+            autoRenumberAllAnnexures();
+            updateAllEventNumbers();
+            updateSuggestedAnnexures();
+            validateAnnexureNumbers();
+            updatePromulgationParaNumbers();
+            triggerAutoSave();
+            showToast('Event removed and annexures renumbered');
+        }
+    }
+}
+
+function autoRenumberAllAnnexures() {
+    var currentNum = 1;
+    for (var i = 0; i < events.length; i++) {
+        if (!events[i]) continue;
+        var eid = events[i].id;
+        var annexNumEl = document.getElementById('annexureNum-' + eid);
+        var newAnnexNum = currentNum.toString().padStart(2, '0');
+        if (annexNumEl) annexNumEl.value = newAnnexNum;
+        var event = events[i];
+        if (event && event.subCount > 0) {
+            for (var s = 1; s <= event.subCount; s++) {
+                var subEl = document.getElementById('subAnnexureNum-' + eid + '-' + s);
+                if (subEl) {
+                    var oldSubVal = subEl.value;
+                    var suffix = '1';
+                    var slashIdx = oldSubVal.lastIndexOf('/');
+                    if (slashIdx !== -1) suffix = oldSubVal.substring(slashIdx + 1);
+                    subEl.value = newAnnexNum + '/' + suffix;
+                }
+            }
+        }
+        // Update event-specific annexure numbers
+        var demiseAnnexEl = document.getElementById('demiseAnnexureNum-' + eid);
+        if (demiseAnnexEl) demiseAnnexEl.value = newAnnexNum;
+        var partLifeAnnexEl = document.getElementById('partLifeAnnexureNum-' + eid);
+        if (partLifeAnnexEl) partLifeAnnexEl.value = newAnnexNum;
+        var promAnnexEl = document.getElementById('promAnnexureNum-' + eid);
+        if (promAnnexEl) promAnnexEl.value = newAnnexNum;
+        var nrsAnnexEl = document.getElementById('nrsAnnexureNum-' + eid);
+        if (nrsAnnexEl) nrsAnnexEl.value = newAnnexNum;
+        var suggestedDiv = document.getElementById('suggestedAnnexure-' + eid);
+        if (suggestedDiv) suggestedDiv.innerHTML = '<strong>Suggested Annexure:</strong> ' + newAnnexNum;
+        updateEventSummary(eid);
+        currentNum++;
+        if (event) currentNum += event.subCount;
+    }
+}
+
+// ==================== SMART NARRATIVE ====================
+function updateEventFields(eventId) {
+    var eventType = document.getElementById('eventType-' + eventId).value;
+    var container = document.getElementById('eventSpecificFields-' + eventId);
+
+    if (eventType) {
+        buildEventSpecificFields(eventId, eventType);
+
+        // Auto-populate common fields
+        if (eventType === 'record_of_rights') {
+            var village = document.getElementById('villageName').value;
+            var taluka = document.getElementById('talukaName').value;
+            if (village) document.getElementById('promVillage-' + eventId).value = village;
+            if (taluka) document.getElementById('promTaluka-' + eventId).value = taluka;
+            var displayNum = 1;
+            for (var i = 0; i < events.length; i++) {
+                if (!events[i]) continue;
+                if (events[i].id === eventId) break;
+                displayNum++;
+            }
+            document.getElementById('paraNum-' + eventId).value = '[' + displayNum + ']';
+            var annexNum = document.getElementById('annexureNum-' + eventId).value;
+            document.getElementById('promAnnexureNum-' + eventId).value = annexNum;
+            updatePromulgationPreview(eventId);
+        } else if (eventType === 'new_revision_survey') {
+            var village = document.getElementById('villageName').value;
+            var taluka = document.getElementById('talukaName').value;
+            if (village) document.getElementById('nrsVillage-' + eventId).value = village;
+            if (taluka) document.getElementById('nrsTaluka-' + eventId).value = taluka;
+            var displayNum = 1;
+            for (var i = 0; i < events.length; i++) {
+                if (!events[i]) continue;
+                if (events[i].id === eventId) break;
+                displayNum++;
+            }
+            document.getElementById('nrsParaNum-' + eventId).value = '[' + displayNum + ']';
+            var annexNum = document.getElementById('annexureNum-' + eventId).value;
+            document.getElementById('nrsAnnexureNum-' + eventId).value = annexNum;
+            updateNewRevisionSurveyPreview(eventId);
+        } else if (eventType === 'demise') {
+            var annexNum = document.getElementById('annexureNum-' + eventId).value;
+            document.getElementById('demiseAnnexureNum-' + eventId).value = annexNum;
+            updateDemisePreview(eventId);
+        } else if (eventType === 'partition_life') {
+            var annexNum = document.getElementById('annexureNum-' + eventId).value;
+            document.getElementById('partLifeAnnexureNum-' + eventId).value = annexNum;
+            updatePartitionLifePreview(eventId);
+        }
+    } else {
+        if (container) container.classList.add('fields-hidden');
+    }
+    updateEventSummary(eventId);
+}
+
+// ==================== VALIDATION ====================
+function validateAnnexureNumbers() {
+    var allNumbers = [];
+    var rows = document.querySelectorAll('.annexure-row');
+    rows.forEach(function(row) {
+        row.classList.remove('duplicate-error');
+        var errorMsg = row.querySelector('.error-msg');
+        if (errorMsg) errorMsg.remove();
+    });
+    rows.forEach(function(row) {
+        var input = row.querySelector('input[type="text"]');
+        if (!input) return;
+        var num = input.value.trim();
+        if (!num) return;
+        var existing = null;
+        for (var i = 0; i < allNumbers.length; i++) {
+            if (allNumbers[i].num === num) { existing = allNumbers[i]; break; }
+        }
+        if (existing) {
+            row.classList.add('duplicate-error');
+            var msg = document.createElement('div');
+            msg.className = 'error-msg';
+            msg.textContent = 'Duplicate annexure number!';
+            row.appendChild(msg);
+            if (!existing.row.classList.contains('duplicate-error')) {
+                existing.row.classList.add('duplicate-error');
+                var existingMsg = document.createElement('div');
+                existingMsg.className = 'error-msg';
+                existingMsg.textContent = 'Duplicate annexure number!';
+                existing.row.appendChild(existingMsg);
+            }
+        } else allNumbers.push({ num: num, row: row });
+    });
+}
+
+function validateBeforeGenerate() {
+    var issues = [];
+    var panel = document.getElementById('validationPanel');
+    var list = document.getElementById('validationList');
+    if (!reportType) issues.push('Report Type is not selected');
+    if (!document.getElementById('reportNum').value) issues.push('TCR Inward Number is missing');
+    if (!document.getElementById('examinerName').value) issues.push('Advocate/Examiner name is missing');
+    if (!document.getElementById('clientName').value) issues.push('Client name is missing');
+    var hasEvents = false;
+    for (var i = 0; i < events.length; i++) {
+        if (!events[i]) continue;
+        hasEvents = true;
+        var eid = events[i].id;
+        var type = document.getElementById('eventType-' + eid);
+        var annexNum = document.getElementById('annexureNum-' + eid);
+        var docType = document.getElementById('docType-' + eid);
+        if (!type || !type.value) issues.push('Event ' + (i+1) + ': Event Type not selected');
+        if (type && type.value === 'record_of_rights') {
+            var promFields = [
+                { id: 'promPartyName', name: 'Name of party in entry' },
+                { id: 'promSurveyNo', name: 'Survey No.' },
+                { id: 'promEntryNo', name: 'Entry Number' },
+                { id: 'promAuthorityPlace', name: 'Revenue Authority & Place' },
+                { id: 'promDocType', name: 'Document Type (True/Photo/Attested)' }
+            ];
+            promFields.forEach(function(field) {
+                var el = document.getElementById(field.id + '-' + eid);
+                if (!el || !el.value.trim()) issues.push('Event ' + (i+1) + ': Promulgation - ' + field.name + ' is required');
+            });
+        } else if (type && type.value === 'new_revision_survey') {
+            var nrsFields = [
+                { id: 'nrsPartyName', name: 'Name of Person holding Agri. land' },
+                { id: 'nrsSurveyNo', name: 'Survey No.' },
+                { id: 'nrsEntryNo', name: 'Entry Number' },
+                { id: 'nrsAuthorityPlace', name: 'Revenue Authority & Place' },
+                { id: 'nrsDocType', name: 'Document Type (True/Photo)' }
+            ];
+            nrsFields.forEach(function(field) {
+                var el = document.getElementById(field.id + '-' + eid);
+                if (!el || !el.value.trim()) issues.push('Event ' + (i+1) + ': New Revision Survey - ' + field.name + ' is required');
+            });
+        } else if (type && type.value === 'demise') {
+            var demiseFields = [
+                { id: 'demiseName', name: 'Name of the person who died' },
+                { id: 'demiseHeirCount', name: 'Number of Legal Heirs' },
+                { id: 'demiseEntryNo', name: 'Entry Number' },
+                { id: 'demiseAuthority', name: 'Authority Name, Place and Date' },
+                { id: 'demiseDocType', name: 'Document Type' }
+            ];
+            demiseFields.forEach(function(field) {
+                var el = document.getElementById(field.id + '-' + eid);
+                if (!el || !el.value.trim()) issues.push('Event ' + (i+1) + ': Demise - ' + field.name + ' is required');
+            });
+        } else if (type && type.value === 'partition_life') {
+            var partLifeFields = [
+                { id: 'partLifeName', name: 'Name of Person Partitioning' },
+                { id: 'partLifeYear', name: 'Year of Partition' },
+                { id: 'partLifeSurvey', name: 'Survey Number' },
+                { id: 'partLifeArea', name: 'Area' },
+                { id: 'partLifeEntryNo', name: 'Entry Number' },
+                { id: 'partLifeAuthority', name: 'Authority Name, Place and Date' },
+                { id: 'partLifeDocType', name: 'Document Type' }
+            ];
+            partLifeFields.forEach(function(field) {
+                var el = document.getElementById(field.id + '-' + eid);
+                if (!el || !el.value.trim()) issues.push('Event ' + (i+1) + ': Partition Life - ' + field.name + ' is required');
+            });
+        }
+        if (!annexNum || !annexNum.value) issues.push('Event ' + (i+1) + ': Annexure Number is missing');
+        if (!docType || !docType.value) issues.push('Event ' + (i+1) + ': Document Type not selected');
+    }
+    if (!hasEvents) issues.push('No events added');
+    var allNums = [];
+    for (var i = 0; i < events.length; i++) {
+        if (!events[i]) continue;
+        var eid = events[i].id;
+        var num = document.getElementById('annexureNum-' + eid);
+        if (num && num.value) {
+            if (allNums.indexOf(num.value) !== -1) issues.push('Duplicate annexure number: ' + num.value);
+            allNums.push(num.value);
+        }
+        for (var s = 1; s <= events[i].subCount; s++) {
+            var subNum = document.getElementById('subAnnexureNum-' + eid + '-' + s);
+            if (subNum && subNum.value) {
+                if (allNums.indexOf(subNum.value) !== -1) issues.push('Duplicate sub-annexure number: ' + subNum.value);
+                allNums.push(subNum.value);
+            }
+        }
+    }
+    list.innerHTML = '';
+    if (issues.length > 0) {
+        issues.forEach(function(issue) {
+            var li = document.createElement('li');
+            li.textContent = issue;
+            list.appendChild(li);
+        });
+        panel.classList.add('active');
+        showToast('Validation failed - see issues above');
+    } else {
+        panel.classList.remove('active');
+        showToast('All validations passed!');
+    }
+    return issues.length === 0;
+}
+
+function validatePromulgationField(eventId, fieldName) {
+    var field = document.getElementById(fieldName + '-' + eventId);
+    var msg = document.getElementById('promVal-' + fieldName + '-' + eventId);
+    if (!field || !msg) return;
+    if (field.value.trim()) {
+        field.classList.remove('prom-required-field');
+        field.classList.add('prom-field-valid');
+        msg.classList.remove('show');
+    } else {
+        field.classList.add('prom-required-field');
+        field.classList.remove('prom-field-valid');
+        msg.classList.add('show');
+    }
+}
+
+// ==================== REPORT GENERATION ====================
+function generateReport() {
+    if (!validateBeforeGenerate()) return;
+    var header = {
+        reportNum: document.getElementById('reportNum').value || '[TCR INWARD NUMBER]',
+        reportDate: formatDate(document.getElementById('reportDate').value),
+        examiner: document.getElementById('examinerName').value || '[ADVOCATE NAME]',
+        preparedBy: document.getElementById('preparedBy').value || '[PREPARED BY NAME]',
+        client: document.getElementById('clientName').value || '[CLIENT NAME]',
+        propertyAddress: document.getElementById('propertyAddress').value || '[ADDRESS]',
+        unitAccount: document.getElementById('unitAccount').value || '[UNIT/ACCOUNT]',
+        propertyType: document.getElementById('propertyType').value || '[PROPERTY TYPE]',
+        floorNumber: document.getElementById('floorNumber').value || '',
+        customFloor: document.getElementById('customFloorNumber').value || '',
+        actualNumber: document.getElementById('actualNumber').value || '',
+        builtUpArea: document.getElementById('builtUpArea').value || '[BUILT UP AREA]',
+        plotNumber: document.getElementById('plotNumber').value || '[PLOT NUMBER]',
+        plotArea: document.getElementById('plotArea').value || '[PLOT AREA]',
+        buildingName: document.getElementById('buildingName').value || '[BUILDING NAME]',
+        surveyNumber: document.getElementById('surveyNumber').value || '[SURVEY NUMBER]',
+        village: document.getElementById('villageName').value || '[VILLAGE]',
+        taluka: document.getElementById('talukaName').value || '[TALUKA]',
+        district: document.getElementById('districtName').value || '[DISTRICT]',
+        sro: document.getElementById('sroOffice').value || '[SRO OFFICE]'
+    };
+    var propertyTypeDisplay = header.propertyType;
+    if (propertyTypeMap[header.propertyType]) propertyTypeDisplay = propertyTypeMap[header.propertyType];
+
+    var narrativeHTML = '';
+    var annexureList = [];
+    var eventCounter = 1;
+    var originalRequiredAnnexures = [];
+
+    for (var i = 0; i < events.length; i++) {
+        if (!events[i]) continue;
+        var eid = events[i].id;
+        var eventType = document.getElementById('eventType-' + eid).value;
+        var narrative = '';
+
+        // Get narrative based on event type
+        if (eventType === 'record_of_rights' || eventType === 'new_revision_survey' || 
+            eventType === 'demise' || eventType === 'partition_life') {
+            narrative = document.getElementById('generatedNarrativeText-' + eid).textContent || '';
+        } else {
+            var narrativeEl = document.getElementById('narrative-' + eid);
+            narrative = narrativeEl ? narrativeEl.value : '';
+        }
+
+        var annexNumEl = document.getElementById('annexureNum-' + eid);
+        var annexNum = annexNumEl ? annexNumEl.value : '';
+        var docTypeEl = document.getElementById('docType-' + eid);
+        var docType = docTypeEl ? docTypeEl.value : '';
+        var annexDescEl = document.getElementById('annexureDesc-' + eid);
+        var annexDesc = annexDescEl ? annexDescEl.value : '';
+        var originalReqEl = document.getElementById('originalReq-' + eid);
+        var originalReq = originalReqEl ? originalReqEl.checked : false;
+
+        if (narrative.trim()) {
+            narrativeHTML += '<div class="document-section"><p><strong>[' + eventCounter + ']</strong> ' + narrative + '</p></div>';
+            eventCounter++;
+        }
+
+        if (annexNum && docType) {
+            var badgeClass = docType === 'Original' ? 'badge-original' : docType === 'Photo Copy' ? 'badge-photocopy' : docType === 'True Copy' ? 'badge-truecopy' : 'badge-certified';
+            var reqNote = originalReq ? '<span class="required-note">ORIGINAL REQUIRED</span>' : '';
+            annexureList.push({ num: annexureList.length + 1, annexNum: annexNum, docType: docType, description: annexDesc + reqNote, badgeClass: badgeClass });
+            if (originalReq) originalRequiredAnnexures.push(annexNum);
+        }
+
+        for (var s = 1; s <= events[i].subCount; s++) {
+            var subAnnexNumEl = document.getElementById('subAnnexureNum-' + eid + '-' + s);
+            var subAnnexNum = subAnnexNumEl ? subAnnexNumEl.value : '';
+            var subDocTypeEl = document.getElementById('subDocType-' + eid + '-' + s);
+            var subDocType = subDocTypeEl ? subDocTypeEl.value : '';
+            var subAnnexDescEl = document.getElementById('subAnnexureDesc-' + eid + '-' + s);
+            var subAnnexDesc = subAnnexDescEl ? subAnnexDescEl.value : '';
+            var subOriginalReqEl = document.getElementById('subOriginalReq-' + eid + '-' + s);
+            var subOriginalReq = subOriginalReqEl ? subOriginalReqEl.checked : false;
+            if (subAnnexNum && subDocType) {
+                var subBadgeClass = subDocType === 'Original' ? 'badge-original' : subDocType === 'Photo Copy' ? 'badge-photocopy' : subDocType === 'True Copy' ? 'badge-truecopy' : 'badge-certified';
+                var subReqNote = subOriginalReq ? '<span class="required-note">ORIGINAL REQUIRED</span>' : '';
+                annexureList.push({ num: annexureList.length + 1, annexNum: subAnnexNum, docType: subDocType, description: subAnnexDesc + subReqNote, badgeClass: subBadgeClass });
+                if (subOriginalReq) originalRequiredAnnexures.push(subAnnexNum);
+            }
+        }
+    }
+
+    var annexureTableHTML = '<table class="annexure-list-table"><thead><tr><th>No.</th><th>Annexure</th><th>Type</th><th>Description</th></tr></thead><tbody>';
+    annexureList.forEach(function(item) {
+        annexureTableHTML += '<tr><td>[' + item.num.toString().padStart(2, '0') + ']</td><td>ANNEX - ' + item.annexNum + '</td><td><span class="original-badge ' + item.badgeClass + '">' + item.docType + '</span></td><td>' + item.description + '</td></tr>';
+    });
+    annexureTableHTML += '</tbody></table>';
+
+    var remarksHTML = '';
+    if (reportType === 'takeover' || reportType === 'sodakhat') {
+        var originalReqList = originalRequiredAnnexures.length > 0 ? originalRequiredAnnexures.join(', ') : '_____';
+        var partB = '';
+        if (reportType === 'takeover') {
+            var bankName = document.getElementById('bankName').value || '[BANK NAME]';
+            partB = "[B] Original No Dues Certificate and Property Release Deed executed by '" + bankName + "'";
+        } else if (reportType === 'sodakhat') {
+            var borrower = document.getElementById('intendingBorrower').value || '[INTENDING BORROWER-PURCHASER]';
+            var seller = document.getElementById('intendingSeller').value || '[INTENDING SELLER]';
+            partB = '[B] Clear title of the property would be passed to ' + borrower + ' (Intending Borrower-Purchaser) only on purchase of abovementioned property by regd. sale deed from ' + seller + ' (Intending Seller).';
+        }
+        remarksHTML = '<div class="remarks-box"><h4>REMARKS</h4><p><strong>Before Creation of Mortgage following documents are required...</strong></p><p>[A] Out of the documents listed above, documents produced at Annexure - ' + originalReqList + ' are required in ORIGINAL except these all other documents are to be required as a true copy or photo copy.</p><p>' + partB + '</p></div>';
+    }
+
+    var propertyDetailsStr = '';
+    if (header.propertyType === 'flat' || header.propertyType === 'office' || header.propertyType === 'shop' || header.propertyType === 'godown') {
+        propertyDetailsStr = propertyTypeDisplay;
+        var floorText = header.floorNumber === 'Custom' && header.customFloor ? header.customFloor : header.floorNumber;
+        if (floorText) propertyDetailsStr += ', ' + floorText + ' Floor';
+        if (header.actualNumber) propertyDetailsStr += ', ' + header.actualNumber;
+        if (header.buildingName) propertyDetailsStr += ', ' + header.buildingName;
+    } else {
+        propertyDetailsStr = propertyTypeDisplay;
+        if (header.buildingName) propertyDetailsStr += ', ' + header.buildingName;
+    }
+
+    var reportHTML = '<div class="document-header"><h2>TITLE CLEARANCE REPORT</h2><p style="margin-top: 10px; font-size: 0.9em;">TCR Inward No. ' + header.reportNum + ' | Date: ' + header.reportDate + '</p><p style="font-size: 0.85em; color: #7f8c8d; margin-top: 5px;">Village: ' + header.village + ', Taluka: ' + header.taluka + ', District: ' + header.district + '</p></div>' +
+        '<div class="document-section"><h3>Advocate / Title Examiner</h3><table><tr><td width="30%"><strong>Name:</strong></td><td>' + header.examiner + '</td></tr><tr><td><strong>Prepared by:</strong></td><td>' + header.preparedBy + '</td></tr><tr><td><strong>Client:</strong></td><td>' + header.client + '</td></tr><tr><td><strong>Sub-Registrar Office:</strong></td><td>' + header.sro + '</td></tr></table></div>' +
+        '<div class="document-section"><h3>Owners Information</h3><table><tr><td width="30%"><strong>Client Name (Current Owner):</strong></td><td>' + header.client + '</td></tr><tr><td><strong>Address:</strong></td><td>' + header.propertyAddress.replace(/\n/g, '<br>') + '</td></tr><tr><td><strong>Unit / Account:</strong></td><td>' + header.unitAccount + '</td></tr></table></div>' +
+        '<div class="document-section"><h3>Property Details</h3><table><tr><td width="30%"><strong>Property Type:</strong></td><td>' + propertyDetailsStr + '</td></tr><tr><td><strong>Built up Area:</strong></td><td>' + header.builtUpArea + ' Sq. Mt.</td></tr><tr><td><strong>Plot Number:</strong></td><td>' + header.plotNumber + '</td></tr><tr><td><strong>Plot Area:</strong></td><td>' + header.plotArea + ' Sq. Mt.</td></tr><tr><td><strong>Survey Number:</strong></td><td>' + header.surveyNumber + '</td></tr><tr><td><strong>Village:</strong></td><td>' + header.village + '</td></tr><tr><td><strong>Taluka:</strong></td><td>' + header.taluka + '</td></tr><tr><td><strong>District:</strong></td><td>' + header.district + '</td></tr></table></div>' +
+        '<div class="document-section"><h3>Title Flow / Chain of Events</h3>' + narrativeHTML + '</div>' +
+        '<div class="document-section"><h3>Annexure List</h3><p style="margin-bottom: 15px;">The following documents are attached herewith in support of the title flow:</p>' + annexureTableHTML + remarksHTML + '</div>' +
+        '<div class="document-section"><h3>Disclaimer</h3><p>This report is issued solely for the purpose of facilitating the proposed transaction and is based on the examination of public records and documents produced by the client. This report does not constitute a title guarantee. Matters affecting title that are not of record, including unregistered instruments, fraud, forgery, and incapacity, are not covered by this examination. The liability of the examining advocate is limited to the professional fees charged.</p><p style="margin-top: 10px;">This report is governed by the laws of Gujarat and India. Disputes, if any, shall be subject to the jurisdiction of courts in Gujarat.</p></div>' +
+        '<div class="signature-block"><div><div class="signature-line"><strong>' + header.examiner + '</strong><br>Advocate & Title Examiner<br>Date: _______________</div></div><div><div class="signature-line"><strong>Office Seal</strong><br>' + header.sro + '<br>Date: _______________</div></div></div>' +
+        '<div style="margin-top: 40px; text-align: center; font-size: 0.85em; color: #7f8c8d; border-top: 1px solid #eee; padding-top: 20px;"><p>This document is confidential and constitutes professional legal opinion.</p><p style="margin-top: 10px;">TCR Inward No. ' + header.reportNum + ' | Generated ' + new Date().toLocaleString('en-IN') + '</p></div>';
+
+    document.getElementById('reportOutput').innerHTML = reportHTML;
+    document.getElementById('reportOutput').style.display = 'block';
+    document.getElementById('reportOutput').scrollIntoView({ behavior: 'smooth' });
+    showToast('Report generated successfully');
+}
+
+function formatDate(dateString) {
+    if (!dateString) return '[DATE]';
+    var date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+// ==================== EXPORT/IMPORT JSON ====================
+function collectAllData() {
+    var eventData = [];
+    for (var i = 0; i < events.length; i++) {
+        if (!events[i]) continue;
+        var eid = events[i].id;
+        var eventType = document.getElementById('eventType-' + eid) ? document.getElementById('eventType-' + eid).value : '';
+        var event = {
+            id: i,
+            type: eventType,
+            annexureNum: document.getElementById('annexureNum-' + eid) ? document.getElementById('annexureNum-' + eid).value : '',
+            docType: document.getElementById('docType-' + eid) ? document.getElementById('docType-' + eid).value : '',
+            annexureDesc: document.getElementById('annexureDesc-' + eid) ? document.getElementById('annexureDesc-' + eid).value : '',
+            originalReq: document.getElementById('originalReq-' + eid) ? document.getElementById('originalReq-' + eid).checked : false,
+            subAnnexures: []
+        };
+
+        // Collect event-specific fields
+        if (eventType === 'record_of_rights') {
+            event.promulgation = {
+                paraNum: document.getElementById('paraNum-' + eid) ? document.getElementById('paraNum-' + eid).value : '',
+                village: document.getElementById('promVillage-' + eid) ? document.getElementById('promVillage-' + eid).value : '',
+                taluka: document.getElementById('promTaluka-' + eid) ? document.getElementById('promTaluka-' + eid).value : '',
+                partyName: document.getElementById('promPartyName-' + eid) ? document.getElementById('promPartyName-' + eid).value : '',
+                surveyNo: document.getElementById('promSurveyNo-' + eid) ? document.getElementById('promSurveyNo-' + eid).value : '',
+                area: document.getElementById('promArea-' + eid) ? document.getElementById('promArea-' + eid).value : '',
+                entryNo: document.getElementById('promEntryNo-' + eid) ? document.getElementById('promEntryNo-' + eid).value : '',
+                authorityPlace: document.getElementById('promAuthorityPlace-' + eid) ? document.getElementById('promAuthorityPlace-' + eid).value : '',
+                docType: document.getElementById('promDocType-' + eid) ? document.getElementById('promDocType-' + eid).value : '',
+                annexureNum: document.getElementById('promAnnexureNum-' + eid) ? document.getElementById('promAnnexureNum-' + eid).value : ''
+            };
+        } else if (eventType === 'new_revision_survey') {
+            event.newRevisionSurvey = {
+                paraNum: document.getElementById('nrsParaNum-' + eid) ? document.getElementById('nrsParaNum-' + eid).value : '',
+                village: document.getElementById('nrsVillage-' + eid) ? document.getElementById('nrsVillage-' + eid).value : '',
+                taluka: document.getElementById('nrsTaluka-' + eid) ? document.getElementById('nrsTaluka-' + eid).value : '',
+                partyName: document.getElementById('nrsPartyName-' + eid) ? document.getElementById('nrsPartyName-' + eid).value : '',
+                surveyNo: document.getElementById('nrsSurveyNo-' + eid) ? document.getElementById('nrsSurveyNo-' + eid).value : '',
+                area: document.getElementById('nrsArea-' + eid) ? document.getElementById('nrsArea-' + eid).value : '',
+                entryNo: document.getElementById('nrsEntryNo-' + eid) ? document.getElementById('nrsEntryNo-' + eid).value : '',
+                authorityPlace: document.getElementById('nrsAuthorityPlace-' + eid) ? document.getElementById('nrsAuthorityPlace-' + eid).value : '',
+                docType: document.getElementById('nrsDocType-' + eid) ? document.getElementById('nrsDocType-' + eid).value : '',
+                annexureNum: document.getElementById('nrsAnnexureNum-' + eid) ? document.getElementById('nrsAnnexureNum-' + eid).value : ''
+            };
+        } else if (eventType === 'demise') {
+            var heirCount = parseInt(document.getElementById('demiseHeirCount-' + eid).value) || 0;
+            var heirs = [];
+            for (var h = 0; h < heirCount; h++) {
+                var heirEl = document.getElementById('demiseHeir-' + h + '-' + eid);
+                if (heirEl) heirs.push(heirEl.value);
+            }
+            event.demise = {
+                name: document.getElementById('demiseName-' + eid) ? document.getElementById('demiseName-' + eid).value : '',
+                heirCount: heirCount,
+                heirs: heirs,
+                entryNo: document.getElementById('demiseEntryNo-' + eid) ? document.getElementById('demiseEntryNo-' + eid).value : '',
+                authority: document.getElementById('demiseAuthority-' + eid) ? document.getElementById('demiseAuthority-' + eid).value : '',
+                docType: document.getElementById('demiseDocType-' + eid) ? document.getElementById('demiseDocType-' + eid).value : '',
+                annexureNum: document.getElementById('demiseAnnexureNum-' + eid) ? document.getElementById('demiseAnnexureNum-' + eid).value : ''
+            };
+        } else if (eventType === 'partition_life') {
+            var partHeirs = [];
+            var idx = 0;
+            while (true) {
+                var heirEl = document.getElementById('partLifeHeir-' + idx + '-' + eid);
+                if (!heirEl) break;
+                partHeirs.push(heirEl.value);
+                idx++;
+            }
+            event.partitionLife = {
+                name: document.getElementById('partLifeName-' + eid) ? document.getElementById('partLifeName-' + eid).value : '',
+                year: document.getElementById('partLifeYear-' + eid) ? document.getElementById('partLifeYear-' + eid).value : '',
+                surveyNo: document.getElementById('partLifeSurvey-' + eid) ? document.getElementById('partLifeSurvey-' + eid).value : '',
+                area: document.getElementById('partLifeArea-' + eid) ? document.getElementById('partLifeArea-' + eid).value : '',
+                entryNo: document.getElementById('partLifeEntryNo-' + eid) ? document.getElementById('partLifeEntryNo-' + eid).value : '',
+                authority: document.getElementById('partLifeAuthority-' + eid) ? document.getElementById('partLifeAuthority-' + eid).value : '',
+                docType: document.getElementById('partLifeDocType-' + eid) ? document.getElementById('partLifeDocType-' + eid).value : '',
+                annexureNum: document.getElementById('partLifeAnnexureNum-' + eid) ? document.getElementById('partLifeAnnexureNum-' + eid).value : '',
+                heirs: partHeirs
+            };
+        } else if (eventType === 'other') {
+            event.otherNarrative = document.getElementById('otherNarrative-' + eid) ? document.getElementById('otherNarrative-' + eid).value : '';
+        }
+
+        for (var s = 1; s <= events[i].subCount; s++) {
+            event.subAnnexures.push({
+                num: document.getElementById('subAnnexureNum-' + eid + '-' + s) ? document.getElementById('subAnnexureNum-' + eid + '-' + s).value : '',
+                docType: document.getElementById('subDocType-' + eid + '-' + s) ? document.getElementById('subDocType-' + eid + '-' + s).value : '',
+                desc: document.getElementById('subAnnexureDesc-' + eid + '-' + s) ? document.getElementById('subAnnexureDesc-' + eid + '-' + s).value : '',
+                originalReq: document.getElementById('subOriginalReq-' + eid + '-' + s) ? document.getElementById('subOriginalReq-' + eid + '-' + s).checked : false
+            });
+        }
+        eventData.push(event);
+    }
+    return {
+        version: 'attempt11',
+        header: {
+            reportNum: document.getElementById('reportNum').value,
+            reportDate: document.getElementById('reportDate').value,
+            examiner: document.getElementById('examinerName').value,
+            preparedBy: document.getElementById('preparedBy').value
+        },
+        ownersInformation: {
+            client: document.getElementById('clientName').value,
+            propertyAddress: document.getElementById('propertyAddress').value,
+            unitAccount: document.getElementById('unitAccount').value
+        },
+        propertyDetails: {
+            propertyType: document.getElementById('propertyType').value,
+            floorNumber: document.getElementById('floorNumber').value,
+            customFloor: document.getElementById('customFloorNumber').value,
+            actualNumber: document.getElementById('actualNumber').value,
+            builtUpArea: document.getElementById('builtUpArea').value,
+            plotNumber: document.getElementById('plotNumber').value,
+            plotArea: document.getElementById('plotArea').value,
+            buildingName: document.getElementById('buildingName').value,
+            surveyNumber: document.getElementById('surveyNumber').value,
+            village: document.getElementById('villageName').value,
+            taluka: document.getElementById('talukaName').value,
+            district: document.getElementById('districtName').value,
+            sro: document.getElementById('sroOffice').value
+        },
+        reportType: reportType,
+        reportTypeData: {
+            bankName: document.getElementById('bankName') ? document.getElementById('bankName').value : '',
+            intendingBorrower: document.getElementById('intendingBorrower') ? document.getElementById('intendingBorrower').value : '',
+            intendingSeller: document.getElementById('intendingSeller') ? document.getElementById('intendingSeller').value : ''
+        },
+        events: eventData
+    };
+}
+
+function exportJSON() {
+    var data = collectAllData();
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'title_report_' + (data.header.reportNum || 'draft') + '_' + new Date().toISOString().split('T')[0] + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Session saved as JSON file');
+}
+
+function importJSON() {
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                var data = JSON.parse(event.target.result);
+                restoreAllData(data);
+                showToast('Session loaded from JSON');
+            } catch (err) {
+                alert('Invalid JSON file: ' + err.message);
+            }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+}
+
+function restoreAllData(data) {
+    if (!data) return;
+    if (data.header) {
+        document.getElementById('reportNum').value = data.header.reportNum || '';
+        document.getElementById('reportDate').value = data.header.reportDate || '';
+        document.getElementById('examinerName').value = data.header.examiner || '';
+        document.getElementById('preparedBy').value = data.header.preparedBy || '';
+    }
+    if (data.ownersInformation) {
+        document.getElementById('clientName').value = data.ownersInformation.client || '';
+        document.getElementById('propertyAddress').value = data.ownersInformation.propertyAddress || '';
+        document.getElementById('unitAccount').value = data.ownersInformation.unitAccount || '';
+    }
+    if (data.propertyDetails) {
+        document.getElementById('propertyType').value = data.propertyDetails.propertyType || '';
+        document.getElementById('floorNumber').value = data.propertyDetails.floorNumber || '';
+        document.getElementById('customFloorNumber').value = data.propertyDetails.customFloor || '';
+        document.getElementById('actualNumber').value = data.propertyDetails.actualNumber || '';
+        document.getElementById('builtUpArea').value = data.propertyDetails.builtUpArea || '';
+        document.getElementById('plotNumber').value = data.propertyDetails.plotNumber || '';
+        document.getElementById('plotArea').value = data.propertyDetails.plotArea || '';
+        document.getElementById('buildingName').value = data.propertyDetails.buildingName || '';
+        document.getElementById('surveyNumber').value = data.propertyDetails.surveyNumber || '';
+        document.getElementById('villageName').value = data.propertyDetails.village || '';
+        document.getElementById('talukaName').value = data.propertyDetails.taluka || '';
+        document.getElementById('districtName').value = data.propertyDetails.district || '';
+        document.getElementById('sroOffice').value = data.propertyDetails.sro || '';
+        updatePropertyTypeFields();
+        handleFloorChange();
+        updateSROInfo();
+    }
+    if (data.reportType) {
+        document.getElementById('reportType').value = data.reportType;
+        updateReportTypeFields();
+    }
+    if (data.reportTypeData) {
+        document.getElementById('bankName').value = data.reportTypeData.bankName || '';
+        document.getElementById('intendingBorrower').value = data.reportTypeData.intendingBorrower || '';
+        document.getElementById('intendingSeller').value = data.reportTypeData.intendingSeller || '';
+    }
+    document.getElementById('eventsContainer').innerHTML = '';
+    events = [];
+    nextEventId = 0;
+    partitionLifeHeirCounts = {};
+
+    if (data.events) {
+        data.events.forEach(function(evt, idx) {
+            addEvent();
+            var newIdx = events.length - 1;
+            var eid = events[newIdx].id;
+            document.getElementById('eventType-' + eid).value = evt.type;
+            document.getElementById('annexureNum-' + eid).value = evt.annexureNum || '';
+            document.getElementById('docType-' + eid).value = evt.docType || '';
+            document.getElementById('annexureDesc-' + eid).value = evt.annexureDesc || '';
+            document.getElementById('originalReq-' + eid).checked = evt.originalReq || false;
+            updateEventIcon(eid);
+            updateEventFields(eid);
+
+            if (evt.type === 'record_of_rights' && evt.promulgation) {
+                document.getElementById('paraNum-' + eid).value = evt.promulgation.paraNum || '';
+                document.getElementById('promVillage-' + eid).value = evt.promulgation.village || '';
+                document.getElementById('promTaluka-' + eid).value = evt.promulgation.taluka || '';
+                document.getElementById('promPartyName-' + eid).value = evt.promulgation.partyName || '';
+                document.getElementById('promSurveyNo-' + eid).value = evt.promulgation.surveyNo || '';
+                document.getElementById('promArea-' + eid).value = evt.promulgation.area || '';
+                document.getElementById('promEntryNo-' + eid).value = evt.promulgation.entryNo || '';
+                document.getElementById('promAuthorityPlace-' + eid).value = evt.promulgation.authorityPlace || '';
+                document.getElementById('promDocType-' + eid).value = evt.promulgation.docType || '';
+                document.getElementById('promAnnexureNum-' + eid).value = evt.promulgation.annexureNum || '';
+                updatePromulgationPreview(eid);
+            } else if (evt.type === 'new_revision_survey' && evt.newRevisionSurvey) {
+                document.getElementById('nrsParaNum-' + eid).value = evt.newRevisionSurvey.paraNum || '';
+                document.getElementById('nrsVillage-' + eid).value = evt.newRevisionSurvey.village || '';
+                document.getElementById('nrsTaluka-' + eid).value = evt.newRevisionSurvey.taluka || '';
+                document.getElementById('nrsPartyName-' + eid).value = evt.newRevisionSurvey.partyName || '';
+                document.getElementById('nrsSurveyNo-' + eid).value = evt.newRevisionSurvey.surveyNo || '';
+                document.getElementById('nrsArea-' + eid).value = evt.newRevisionSurvey.area || '';
+                document.getElementById('nrsEntryNo-' + eid).value = evt.newRevisionSurvey.entryNo || '';
+                document.getElementById('nrsAuthorityPlace-' + eid).value = evt.newRevisionSurvey.authorityPlace || '';
+                document.getElementById('nrsDocType-' + eid).value = evt.newRevisionSurvey.docType || '';
+                document.getElementById('nrsAnnexureNum-' + eid).value = evt.newRevisionSurvey.annexureNum || '';
+                updateNewRevisionSurveyPreview(eid);
+            } else if (evt.type === 'demise' && evt.demise) {
+                document.getElementById('demiseName-' + eid).value = evt.demise.name || '';
+                document.getElementById('demiseHeirCount-' + eid).value = evt.demise.heirCount || '';
+                updateDemiseHeirInputs(eid);
+                if (evt.demise.heirs) {
+                    evt.demise.heirs.forEach(function(heir, hIdx) {
+                        var heirEl = document.getElementById('demiseHeir-' + hIdx + '-' + eid);
+                        if (heirEl) heirEl.value = heir;
+                    });
+                }
+                document.getElementById('demiseEntryNo-' + eid).value = evt.demise.entryNo || '';
+                document.getElementById('demiseAuthority-' + eid).value = evt.demise.authority || '';
+                document.getElementById('demiseDocType-' + eid).value = evt.demise.docType || '';
+                document.getElementById('demiseAnnexureNum-' + eid).value = evt.demise.annexureNum || '';
+                updateDemisePreview(eid);
+            } else if (evt.type === 'partition_life' && evt.partitionLife) {
+                document.getElementById('partLifeName-' + eid).value = evt.partitionLife.name || '';
+                document.getElementById('partLifeYear-' + eid).value = evt.partitionLife.year || '';
+                document.getElementById('partLifeSurvey-' + eid).value = evt.partitionLife.surveyNo || '';
+                document.getElementById('partLifeArea-' + eid).value = evt.partitionLife.area || '';
+                document.getElementById('partLifeEntryNo-' + eid).value = evt.partitionLife.entryNo || '';
+                document.getElementById('partLifeAuthority-' + eid).value = evt.partitionLife.authority || '';
+                document.getElementById('partLifeDocType-' + eid).value = evt.partitionLife.docType || '';
+                document.getElementById('partLifeAnnexureNum-' + eid).value = evt.partitionLife.annexureNum || '';
+                if (evt.partitionLife.heirs) {
+                    evt.partitionLife.heirs.forEach(function(heir, hIdx) {
+                        if (hIdx === 0) {
+                            var el = document.getElementById('partLifeHeir-0-' + eid);
+                            if (el) el.value = heir;
+                        } else {
+                            addPartitionLifeHeirField(eid);
+                            var newEl = document.getElementById('partLifeHeir-' + hIdx + '-' + eid);
+                            if (newEl) newEl.value = heir;
+                        }
+                    });
+                }
+                updatePartitionLifePreview(eid);
+            } else if (evt.type === 'other' && evt.otherNarrative) {
+                var otherEl = document.getElementById('otherNarrative-' + eid);
+                if (otherEl) otherEl.value = evt.otherNarrative;
+            }
+
+            if (evt.subAnnexures) {
+                evt.subAnnexures.forEach(function(sub) {
+                    addSubAnnexure(eid);
+                    var subId = events[newIdx].subCount;
+                    document.getElementById('subAnnexureNum-' + eid + '-' + subId).value = sub.num;
+                    document.getElementById('subDocType-' + eid + '-' + subId).value = sub.docType;
+                    document.getElementById('subAnnexureDesc-' + eid + '-' + subId).value = sub.desc;
+                    document.getElementById('subOriginalReq-' + eid + '-' + subId).checked = sub.originalReq;
+                });
+            }
+            updateEventSummary(eid);
+        });
+    }
+    updateAllEventNumbers();
+    updateSuggestedAnnexures();
+    validateAnnexureNumbers();
+    updatePromulgationParaNumbers();
+    updatePanelSummary('panel-header');
+    updatePanelSummary('panel-owners');
+    updatePanelSummary('panel-property');
+    updatePanelSummary('panel-reporttype');
+    saveUndoState();
+}
+
+// ==================== WORD EXPORT ====================
+function exportAsWord() {
+    var reportContent = document.getElementById('reportOutput').innerHTML;
+    if (!reportContent || document.getElementById('reportOutput').style.display === 'none') {
+        alert('Please generate the report first before exporting.');
+        return;
+    }
+    var reportNum = document.getElementById('reportNum').value || 'draft';
+
+    // Create a proper HTML document for Word
+    var wordHTML = '<!DOCTYPE html>';
+    wordHTML += '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">';
+    wordHTML += '<head>';
+    wordHTML += '<meta charset="utf-8">';
+    wordHTML += '<title>Title Report</title>';
+    wordHTML += '<style>';
+    wordHTML += 'body { font-family: "Georgia", "Times New Roman", serif; font-size: 12pt; line-height: 1.6; }';
+    wordHTML += 'h2 { text-align: center; color: #1a3a52; font-size: 18pt; }';
+    wordHTML += 'h3 { color: #2c5f7c; font-size: 14pt; text-transform: uppercase; }';
+    wordHTML += 'table { width: 100%; border-collapse: collapse; margin: 15px 0; }';
+    wordHTML += 'th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }';
+    wordHTML += 'th { background: #f5f5f5; font-weight: bold; }';
+    wordHTML += '.remarks-box { background: #fff3cd; border: 2px solid #ffc107; padding: 15px; margin: 15px 0; }';
+    wordHTML += '.signature-block { margin-top: 40px; }';
+    wordHTML += '.signature-line { border-top: 1px solid #333; margin-top: 60px; padding-top: 5px; }';
+    wordHTML += '.original-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10pt; font-weight: bold; }';
+    wordHTML += '.badge-original { background: #d4edda; color: #155724; }';
+    wordHTML += '.badge-photocopy { background: #f8d7da; color: #721c24; }';
+    wordHTML += '.badge-truecopy { background: #fff3cd; color: #856404; }';
+    wordHTML += '.badge-certified { background: #d1ecf1; color: #0c5460; }';
+    wordHTML += '.required-note { background: #ffebee; color: #c62828; padding: 2px 6px; border-radius: 3px; font-size: 9pt; font-weight: bold; }';
+    wordHTML += '</style>';
+    wordHTML += '</head>';
+    wordHTML += '<body>';
+    wordHTML += reportContent;
+    wordHTML += '</body></html>';
+
+    var blob = new Blob(['\ufeff', wordHTML], { type: 'application/msword' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'Title_Report_' + reportNum + '_' + new Date().toISOString().split('T')[0] + '.doc';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Report exported as Word document (.doc)');
+}
+
+// ==================== CLEAR ALL ====================
+function clearAll() {
+    if (confirm('Are you sure you want to clear all events and start fresh?')) {
+        events = [];
+        nextEventId = 0;
+        reportType = '';
+        partitionLifeHeirCounts = {};
+        document.getElementById('eventsContainer').innerHTML = '';
+        document.getElementById('reportOutput').style.display = 'none';
+        document.getElementById('reportNum').value = '';
+        document.getElementById('examinerName').value = '';
+        document.getElementById('preparedBy').value = '';
+        document.getElementById('clientName').value = '';
+        document.getElementById('propertyAddress').value = '';
+        document.getElementById('unitAccount').value = '';
+        document.getElementById('propertyType').value = '';
+        document.getElementById('floorNumber').value = '';
+        document.getElementById('customFloorNumber').value = '';
+        document.getElementById('actualNumber').value = '';
+        document.getElementById('builtUpArea').value = '';
+        document.getElementById('plotNumber').value = '';
+        document.getElementById('plotArea').value = '';
+        document.getElementById('buildingName').value = '';
+        document.getElementById('surveyNumber').value = '';
+        document.getElementById('villageName').value = '';
+        document.getElementById('talukaName').value = '';
+        document.getElementById('districtName').value = '';
+        document.getElementById('sroOffice').value = '';
+        document.getElementById('reportType').value = '';
+        document.getElementById('bankName').value = '';
+        document.getElementById('intendingBorrower').value = '';
+        document.getElementById('intendingSeller').value = '';
+        document.getElementById('takeoverFields').classList.remove('active');
+        document.getElementById('sodakhatFields').classList.remove('active');
+        document.getElementById('originalFields').classList.remove('active');
+        document.getElementById('flatOfficeShopGodownFields').classList.remove('active');
+        document.getElementById('customFloorField').classList.remove('active');
+        document.getElementById('reportDate').valueAsDate = new Date();
+        document.getElementById('validationPanel').classList.remove('active');
+        document.getElementById('sroInfoBox').classList.remove('active');
+        var panels = ['panel-header', 'panel-owners', 'panel-property', 'panel-reporttype', 'panel-events'];
+        panels.forEach(function(pid) {
+            var panel = document.getElementById(pid);
+            if (panel) {
+                panel.classList.remove('completed');
+                var statusEl = document.getElementById('status-' + pid.replace('panel-', ''));
+                if (statusEl) statusEl.innerHTML = '';
+                var summaryEl = document.getElementById('summary-' + pid);
+                if (summaryEl) summaryEl.innerHTML = '';
+                var body = panel.querySelector('.panel-body');
+                if (body) body.style.display = 'block';
+            }
+        });
+        localStorage.removeItem(AUTO_SAVE_KEY);
+        undoStack = [];
+        redoStack = [];
+        updateUndoRedoButtons();
+        showToast('All data cleared');
+    }
+}
+
+// Initialize undo state
+saveUndoState();
+</script>
+</body>
+</html>
