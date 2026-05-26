@@ -49,6 +49,28 @@
         .panel h3 { color: var(--secondary); margin-bottom: 15px; font-size: 1.1em; }
         .panel.collapsed .panel-body { display: none; }
         .panel.completed .panel-body { display: none; }
+        .panel.completed h2 { border-bottom: 1px solid var(--completed-border); margin-bottom: 0; padding-bottom: 10px; }
+        .panel-summary { display: none; padding: 15px 0 0 0; font-size: 0.95em; color: var(--text); line-height: 1.8; }
+        .panel.completed .panel-summary { display: none; }
+        .panel-summary-item { display: inline-block; margin-right: 20px; margin-bottom: 5px; }
+        .panel-summary-item strong { color: var(--primary); }
+        .collapsed-mandatory-fields { display: none; padding: 15px 0 0 0; }
+        .panel.completed .collapsed-mandatory-fields { display: block; }
+        .collapsed-mandatory-fields .mandatory-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; }
+        .collapsed-mandatory-fields .mandatory-field { margin-bottom: 0; }
+        .collapsed-mandatory-fields .mandatory-field label { font-size: 0.85em; color: var(--secondary); margin-bottom: 4px; font-weight: 600; }
+        .collapsed-mandatory-fields .mandatory-field .mandatory-value { padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; font-size: 0.92em; color: var(--text); min-height: 38px; display: flex; align-items: center; }
+        .event-card.completed .collapsed-event-fields { display: block; }
+        .collapsed-event-fields { display: none; padding: 10px 20px 15px 20px; background: var(--completed); border-top: 1px solid var(--completed-border); }
+        .collapsed-event-fields .mandatory-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px 15px; }
+        .collapsed-event-fields .mandatory-field label { font-size: 0.8em; color: var(--secondary); margin-bottom: 3px; font-weight: 600; }
+        .collapsed-event-fields .mandatory-field .mandatory-value { padding: 6px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; font-size: 0.88em; color: var(--text); min-height: 32px; display: flex; align-items: center; }
+        @media (max-width: 768px) {
+            .collapsed-mandatory-fields .mandatory-grid { grid-template-columns: 1fr; }
+            .collapsed-event-fields .mandatory-grid { grid-template-columns: 1fr; }
+        }
+        .panel.collapsed .panel-body { display: none; }
+        .panel.completed .panel-body { display: none; }
         .panel.completed h2 { border-bottom: none; margin-bottom: 0; }
         .panel-summary { display: none; padding: 15px 0 0 0; font-size: 0.95em; color: var(--text); line-height: 1.8; }
         .panel.completed .panel-summary { display: block; }
@@ -126,6 +148,8 @@
         .event-actions { display: flex; gap: 6px; align-items: center; }
         .event-actions .btn { margin: 0; padding: 4px 10px; font-size: 0.8em; }
         .event-body { padding: 20px; transition: all 0.3s; }
+        .event-summary { display: none; padding: 10px 20px 15px 20px; font-size: 0.9em; color: var(--text); background: var(--completed); border-top: 1px solid var(--completed-border); }
+        .event-card.completed .event-summary { display: none; }
         .event-summary { display: none; padding: 10px 20px 15px 20px; font-size: 0.9em; color: var(--text); background: var(--completed); border-top: 1px solid var(--completed-border); }
         .event-card.completed .event-summary { display: block; }
         .event-summary-content { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
@@ -414,6 +438,17 @@
                 <button class="save-collapse-btn" onclick="saveAndCollapsePanel('panel-header')">Done / Collapse Section</button>
             </div>
             <div class="panel-summary" id="summary-panel-header"></div>
+            <div class="collapsed-mandatory-fields" id="collapsed-panel-header">
+                <div class="mandatory-grid">
+                    <div class="mandatory-field"><label>TCR Inward Number</label><div class="mandatory-value" id="collapsed-reportNum">—</div></div>
+                    <div class="mandatory-field"><label>Date of Report</label><div class="mandatory-value" id="collapsed-reportDate">—</div></div>
+                    <div class="mandatory-field"><label>Advocate / Title Examiner</label><div class="mandatory-value" id="collapsed-examinerName">—</div></div>
+                    <div class="mandatory-field"><label>Prepared By</label><div class="mandatory-value" id="collapsed-preparedBy">—</div></div>
+                </div>
+            </div>
+                <button class="save-collapse-btn" onclick="saveAndCollapsePanel('panel-header')">Done / Collapse Section</button>
+            </div>
+            <div class="panel-summary" id="summary-panel-header"></div>
         </div>
 
         <div class="panel no-print" id="panel-owners">
@@ -441,6 +476,16 @@
                         </div>
                     </div>
                 </div>
+                <button class="save-collapse-btn" onclick="saveAndCollapsePanel('panel-owners')">Done / Collapse Section</button>
+            </div>
+            <div class="panel-summary" id="summary-panel-owners"></div>
+            <div class="collapsed-mandatory-fields" id="collapsed-panel-owners">
+                <div class="mandatory-grid">
+                    <div class="mandatory-field"><label>Client Name (Current Owner)</label><div class="mandatory-value" id="collapsed-clientName">—</div></div>
+                    <div class="mandatory-field"><label>Unit / Account</label><div class="mandatory-value" id="collapsed-unitAccount">—</div></div>
+                    <div class="mandatory-field" style="grid-column: 1 / -1;"><label>Address</label><div class="mandatory-value" id="collapsed-propertyAddress">—</div></div>
+                </div>
+            </div>
                 <button class="save-collapse-btn" onclick="saveAndCollapsePanel('panel-owners')">Done / Collapse Section</button>
             </div>
             <div class="panel-summary" id="summary-panel-owners"></div>
@@ -560,6 +605,19 @@
                 <button class="save-collapse-btn" onclick="saveAndCollapsePanel('panel-property')">Done / Collapse Section</button>
             </div>
             <div class="panel-summary" id="summary-panel-property"></div>
+            <div class="collapsed-mandatory-fields" id="collapsed-panel-property">
+                <div class="mandatory-grid">
+                    <div class="mandatory-field"><label>Property Type</label><div class="mandatory-value" id="collapsed-propertyType">—</div></div>
+                    <div class="mandatory-field"><label>Survey Number</label><div class="mandatory-value" id="collapsed-surveyNumber">—</div></div>
+                    <div class="mandatory-field"><label>Village</label><div class="mandatory-value" id="collapsed-villageName">—</div></div>
+                    <div class="mandatory-field"><label>Taluka</label><div class="mandatory-value" id="collapsed-talukaName">—</div></div>
+                    <div class="mandatory-field"><label>District</label><div class="mandatory-value" id="collapsed-districtName">—</div></div>
+                    <div class="mandatory-field"><label>Plot Number</label><div class="mandatory-value" id="collapsed-plotNumber">—</div></div>
+                </div>
+            </div>
+                <button class="save-collapse-btn" onclick="saveAndCollapsePanel('panel-property')">Done / Collapse Section</button>
+            </div>
+            <div class="panel-summary" id="summary-panel-property"></div>
         </div>
 
         <div class="panel no-print report-type-section" id="panel-reporttype">
@@ -606,6 +664,15 @@
                         <strong>Note:</strong> For Original report, all documents can be Original, Photo Copy, True Copy, or Certified Copy as per actual availability. No special remarks will be added.
                     </p>
                 </div>
+                <button class="save-collapse-btn" onclick="saveAndCollapsePanel('panel-reporttype')">Done / Collapse Section</button>
+            </div>
+            <div class="panel-summary" id="summary-panel-reporttype"></div>
+            <div class="collapsed-mandatory-fields" id="collapsed-panel-reporttype">
+                <div class="mandatory-grid">
+                    <div class="mandatory-field"><label>Type of Report</label><div class="mandatory-value" id="collapsed-reportType">—</div></div>
+                    <div class="mandatory-field" id="collapsed-reporttype-extra"><label>Additional Info</label><div class="mandatory-value" id="collapsed-reportTypeExtra">—</div></div>
+                </div>
+            </div>
                 <button class="save-collapse-btn" onclick="saveAndCollapsePanel('panel-reporttype')">Done / Collapse Section</button>
             </div>
             <div class="panel-summary" id="summary-panel-reporttype"></div>
@@ -924,11 +991,61 @@ function saveAndCollapsePanel(panelId) {
     if (!isValid) { showToast('Please fill required fields before saving'); return; }
     panel.classList.add('completed');
     updatePanelSummary(panelId);
+    updateCollapsedMandatoryFields(panelId);
     var statusEl = document.getElementById('status-' + panelId.replace('panel-', ''));
     if (statusEl) statusEl.innerHTML = '<span class="completion-check">&#10003;</span> Saved';
     unlockNextPanel(panelId);
     triggerAutoSave();
     showToast('Section saved and collapsed');
+}
+
+function updateCollapsedMandatoryFields(panelId) {
+    var type = panelId.replace('panel-', '');
+    switch(type) {
+        case 'header':
+            setCollapsedValue('collapsed-reportNum', document.getElementById('reportNum').value);
+            setCollapsedValue('collapsed-reportDate', formatDateShort(document.getElementById('reportDate').value));
+            setCollapsedValue('collapsed-examinerName', document.getElementById('examinerName').value);
+            setCollapsedValue('collapsed-preparedBy', document.getElementById('preparedBy').value);
+            break;
+        case 'owners':
+            setCollapsedValue('collapsed-clientName', document.getElementById('clientName').value);
+            setCollapsedValue('collapsed-unitAccount', document.getElementById('unitAccount').value);
+            var addr = document.getElementById('propertyAddress').value;
+            setCollapsedValue('collapsed-propertyAddress', addr ? addr.replace(/\n/g, ', ') : '');
+            break;
+        case 'property':
+            var propType = document.getElementById('propertyType').value;
+            setCollapsedValue('collapsed-propertyType', propertyTypeMap[propType] || propType);
+            setCollapsedValue('collapsed-surveyNumber', document.getElementById('surveyNumber').value);
+            setCollapsedValue('collapsed-villageName', document.getElementById('villageName').value);
+            setCollapsedValue('collapsed-talukaName', document.getElementById('talukaName').value);
+            setCollapsedValue('collapsed-districtName', document.getElementById('districtName').value);
+            setCollapsedValue('collapsed-plotNumber', document.getElementById('plotNumber').value);
+            break;
+        case 'reporttype':
+            var rType = document.getElementById('reportType').value;
+            var typeName = rType === 'takeover' ? 'Takeover File' : rType === 'sodakhat' ? 'Sodakhat / Agreement to Sale' : 'Original';
+            setCollapsedValue('collapsed-reportType', typeName);
+            var extraEl = document.getElementById('collapsed-reporttype-extra');
+            if (rType === 'takeover') {
+                if (extraEl) { extraEl.style.display = 'block'; extraEl.querySelector('label').textContent = 'Bank / Financial Institution'; }
+                setCollapsedValue('collapsed-reportTypeExtra', document.getElementById('bankName').value);
+            } else if (rType === 'sodakhat') {
+                if (extraEl) { extraEl.style.display = 'block'; extraEl.querySelector('label').textContent = 'Borrower / Seller'; }
+                var borrower = document.getElementById('intendingBorrower').value || '';
+                var seller = document.getElementById('intendingSeller').value || '';
+                setCollapsedValue('collapsed-reportTypeExtra', borrower + (borrower && seller ? ' / ' : '') + seller);
+            } else {
+                if (extraEl) extraEl.style.display = 'none';
+            }
+            break;
+    }
+}
+
+function setCollapsedValue(elementId, value) {
+    var el = document.getElementById(elementId);
+    if (el) el.textContent = value && value.trim() ? value.trim() : '—';
 }
 
 // ==================== SEQUENTIAL PANEL UNLOCKING ====================
@@ -1201,6 +1318,20 @@ function addEvent() {
     html += '</div>';
     html += '</div>';
 
+    html += '<div class="event-summary" id="eventSummary-' + eventId + '">';
+    html += '<div class="event-summary-content" id="eventSummaryContent-' + eventId + '">';
+    html += '<span class="event-summary-annex" id="eventSummaryAnnex-' + eventId + '">ANNEX-??</span>';
+    html += '<span class="event-summary-type" id="eventSummaryType-' + eventId + '">No Event Type</span>';
+    html += '<span class="event-summary-desc" id="eventSummaryDesc-' + eventId + '">No description</span>';
+    html += '</div>';
+    html += '</div>';
+
+    html += '<div class="collapsed-event-fields" id="collapsedEvent-' + eventId + '">';
+    html += '<div class="mandatory-grid">';
+    html += '<div class="mandatory-field"><label>Event Type</label><div class="mandatory-value" id="collapsed-eventType-' + eventId + '">—</div></div>';
+    html += '<div class="mandatory-field"><label>Annexure Number</label><div class="mandatory-value" id="collapsed-annexureNum-' + eventId + '">—</div></div>';
+    html += '<div class="mandatory-field"><label>Document Type</label><div class="mandatory-value" id="collapsed-docType-' + eventId + '">—</div></div>';
+    html += '</div>';
     html += '<div class="event-summary" id="eventSummary-' + eventId + '">';
     html += '<div class="event-summary-content" id="eventSummaryContent-' + eventId + '">';
     html += '<span class="event-summary-annex" id="eventSummaryAnnex-' + eventId + '">ANNEX-??</span>';
@@ -2415,6 +2546,27 @@ function saveAndCollapseEvent(eventId) {
     finalizeSaveAndCollapseEvent(eventId);
 }
 
+function finalizeSaveAndCollapseEvent(eventId) {
+    updateEventSummary(eventId);
+    updateCollapsedEventFields(eventId);
+    var eventCard = document.getElementById('event-' + eventId);
+    eventCard.classList.add('completed');
+
+    var statusEl = document.getElementById('eventStatus-' + eventId);
+    if (statusEl) statusEl.innerHTML = '<span class="completion-check">&#10003;</span>';
+
+    triggerAutoSave();
+    showToast('Event saved and collapsed');
+}
+
+function updateCollapsedEventFields(eventId) {
+    var eventType = document.getElementById('eventType-' + eventId).value;
+    var annexNum = document.getElementById('annexureNum-' + eventId).value;
+    var docType = document.getElementById('docType-' + eventId).value;
+    var typeName = eventTypeNames[eventType] || eventType || '—';
+    setCollapsedValue('collapsed-eventType-' + eventId, typeName);
+    setCollapsedValue('collapsed-annexureNum-' + eventId, annexNum ? 'ANNEX - ' + annexNum : '—');
+    setCollapsedValue('collapsed-docType-' + eventId, docType || '—');
 function finalizeSaveAndCollapseEvent(eventId) {
     updateEventSummary(eventId);
     var eventCard = document.getElementById('event-' + eventId);
