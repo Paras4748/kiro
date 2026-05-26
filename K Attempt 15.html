@@ -69,6 +69,13 @@
             .collapsed-mandatory-fields .mandatory-grid { grid-template-columns: 1fr; }
             .collapsed-event-fields .mandatory-grid { grid-template-columns: 1fr; }
         }
+        .panel.collapsed .panel-body { display: none; }
+        .panel.completed .panel-body { display: none; }
+        .panel.completed h2 { border-bottom: none; margin-bottom: 0; }
+        .panel-summary { display: none; padding: 15px 0 0 0; font-size: 0.95em; color: var(--text); line-height: 1.8; }
+        .panel.completed .panel-summary { display: block; }
+        .panel-summary-item { display: inline-block; margin-right: 20px; margin-bottom: 5px; }
+        .panel-summary-item strong { color: var(--primary); }
         .form-group { margin-bottom: 18px; }
         label { display: block; font-weight: 600; margin-bottom: 6px; color: var(--text); font-size: 0.95em; }
         input[type="text"], input[type="date"], input[type="number"], select, textarea {
@@ -143,6 +150,8 @@
         .event-body { padding: 20px; transition: all 0.3s; }
         .event-summary { display: none; padding: 10px 20px 15px 20px; font-size: 0.9em; color: var(--text); background: var(--completed); border-top: 1px solid var(--completed-border); }
         .event-card.completed .event-summary { display: none; }
+        .event-summary { display: none; padding: 10px 20px 15px 20px; font-size: 0.9em; color: var(--text); background: var(--completed); border-top: 1px solid var(--completed-border); }
+        .event-card.completed .event-summary { display: block; }
         .event-summary-content { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
         .event-summary-annex { background: var(--primary); color: white; padding: 3px 10px; border-radius: 4px; font-weight: 600; font-size: 0.85em; }
         .event-summary-type { color: var(--secondary); font-weight: 600; }
@@ -437,6 +446,9 @@
                     <div class="mandatory-field"><label>Prepared By</label><div class="mandatory-value" id="collapsed-preparedBy">—</div></div>
                 </div>
             </div>
+                <button class="save-collapse-btn" onclick="saveAndCollapsePanel('panel-header')">Done / Collapse Section</button>
+            </div>
+            <div class="panel-summary" id="summary-panel-header"></div>
         </div>
 
         <div class="panel no-print" id="panel-owners">
@@ -474,6 +486,9 @@
                     <div class="mandatory-field" style="grid-column: 1 / -1;"><label>Address</label><div class="mandatory-value" id="collapsed-propertyAddress">—</div></div>
                 </div>
             </div>
+                <button class="save-collapse-btn" onclick="saveAndCollapsePanel('panel-owners')">Done / Collapse Section</button>
+            </div>
+            <div class="panel-summary" id="summary-panel-owners"></div>
         </div>
 
         <div class="panel no-print" id="panel-property">
@@ -600,6 +615,9 @@
                     <div class="mandatory-field"><label>Plot Number</label><div class="mandatory-value" id="collapsed-plotNumber">—</div></div>
                 </div>
             </div>
+                <button class="save-collapse-btn" onclick="saveAndCollapsePanel('panel-property')">Done / Collapse Section</button>
+            </div>
+            <div class="panel-summary" id="summary-panel-property"></div>
         </div>
 
         <div class="panel no-print report-type-section" id="panel-reporttype">
@@ -655,6 +673,9 @@
                     <div class="mandatory-field" id="collapsed-reporttype-extra"><label>Additional Info</label><div class="mandatory-value" id="collapsed-reportTypeExtra">—</div></div>
                 </div>
             </div>
+                <button class="save-collapse-btn" onclick="saveAndCollapsePanel('panel-reporttype')">Done / Collapse Section</button>
+            </div>
+            <div class="panel-summary" id="summary-panel-reporttype"></div>
         </div>
 
         <div class="panel no-print" id="panel-events">
@@ -1310,6 +1331,12 @@ function addEvent() {
     html += '<div class="mandatory-field"><label>Event Type</label><div class="mandatory-value" id="collapsed-eventType-' + eventId + '">—</div></div>';
     html += '<div class="mandatory-field"><label>Annexure Number</label><div class="mandatory-value" id="collapsed-annexureNum-' + eventId + '">—</div></div>';
     html += '<div class="mandatory-field"><label>Document Type</label><div class="mandatory-value" id="collapsed-docType-' + eventId + '">—</div></div>';
+    html += '</div>';
+    html += '<div class="event-summary" id="eventSummary-' + eventId + '">';
+    html += '<div class="event-summary-content" id="eventSummaryContent-' + eventId + '">';
+    html += '<span class="event-summary-annex" id="eventSummaryAnnex-' + eventId + '">ANNEX-??</span>';
+    html += '<span class="event-summary-type" id="eventSummaryType-' + eventId + '">No Event Type</span>';
+    html += '<span class="event-summary-desc" id="eventSummaryDesc-' + eventId + '">No description</span>';
     html += '</div>';
     html += '</div>';
 
@@ -2540,6 +2567,16 @@ function updateCollapsedEventFields(eventId) {
     setCollapsedValue('collapsed-eventType-' + eventId, typeName);
     setCollapsedValue('collapsed-annexureNum-' + eventId, annexNum ? 'ANNEX - ' + annexNum : '—');
     setCollapsedValue('collapsed-docType-' + eventId, docType || '—');
+function finalizeSaveAndCollapseEvent(eventId) {
+    updateEventSummary(eventId);
+    var eventCard = document.getElementById('event-' + eventId);
+    eventCard.classList.add('completed');
+
+    var statusEl = document.getElementById('eventStatus-' + eventId);
+    if (statusEl) statusEl.innerHTML = '<span class="completion-check">&#10003;</span>';
+
+    triggerAutoSave();
+    showToast('Event saved and collapsed');
 }
 
 function updateEventIcon(eventId) {
